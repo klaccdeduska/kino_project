@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 
+import SeatPicker from './components/SeatPicker.vue'
+
 interface Movie {
   id: number
   title: string
@@ -67,23 +69,23 @@ function posterUrl(url: string) {
   v-model="search"
   class="search"
   type="search"
-  placeholder="Найти фильм..."
-  aria-label="Поиск фильма"
+  placeholder="Find movie..."
+  aria-label="Search for movie"
 />
 <section v-if="selectedMovie" class="movie-details">
   <button class="details-button" @click="selectedMovie = null">
-    Закрыть описание
+    Close details
   </button>
 
   <h2>{{ selectedMovie.title }}</h2>
   <p>{{ selectedMovie.genre }} · {{ selectedMovie.duration }} мин</p>
-  <p>{{ selectedMovie.description || 'Описание пока отсутствует.' }}</p>
+  <p>{{ selectedMovie.description || 'Description not available yet.' }}</p>
 </section>
     <p v-if="loading" role="status">Downloading movies…</p>
     <p v-else-if="error" role="alert">{{ error }}</p>
     <p v-else-if="filteredMovies.length === 0">No films found.</p>
 
-    <section v-else class="movies" aria-label="Список фильмов">
+    <section v-else class="movies" aria-label="List of movies">
       <article v-for="movie in filteredMovies" :key="movie.id" class="movie">
         <img
           v-if="movie.poster"
@@ -95,11 +97,12 @@ function posterUrl(url: string) {
         <div v-else class="poster">{{ movie.title }}</div>
 
         <h2>{{ movie.title }}</h2>
-        <p>{{ movie.genre }} · {{ movie.duration }} мин</p>
+        <p>{{ movie.genre }} · {{ movie.duration }} min</p>
         <button class="details-button" @click="selectedMovie = movie">
-          Подробнее
+          Details
         </button>
       </article>
+      <SeatPicker :key="selectedMovie.id" />
     </section>
   </main>
 </template>
