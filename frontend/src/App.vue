@@ -102,7 +102,7 @@ function posterUrl(url: string) {
           Details
         </button>
       </article>
-      <SeatPicker :key="selectedMovie.id" />
+      <SeatPicker v-if="selectedMovie" :key="selectedMovie.id" />
     </section>
   </main>
 </template>
