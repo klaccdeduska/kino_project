@@ -1,11 +1,20 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 const rows = ['A', 'B', 'C', 'D', 'E']
 const seatsPerRow = 8
+const ticketPriceCents = 800
 
 const occupiedSeats = ['A-3', 'B-5', 'C-4']
 const selectedSeats = ref<string[]>([])
+
+const totalCents = computed(
+  () => selectedSeats.value.length * ticketPriceCents,
+)
+
+function formatPrice(cents: number) {
+  return `${(cents / 100).toFixed(2)} €`
+}
 
 function isOccupied(seatId: string) {
   return occupiedSeats.includes(seatId)
@@ -35,6 +44,7 @@ function clearSelection() {
 <template>
   <section aria-label="Seat selection">
     <h2>Hall 1</h2>
+    <p>Demonstration prices and seat availability.</p>
 
     <p>SCREEN</p>
     <hr />
@@ -59,12 +69,18 @@ function clearSelection() {
 
     <p>× — occupied, ✓ — selected.</p>
 
-    <p aria-live="polite">
-      Selected seats:
-      {{ selectedSeats.join(', ') || 'None' }}
-    </p>
+    <hr />
 
-    <p>Number of tickets: {{ selectedSeats.length }}</p>
+    <section aria-label="Selection summary" aria-live="polite">
+      <h2>Your selection</h2>
+
+      <p>Seats: {{ selectedSeats.join(', ') || 'None' }}</p>
+      <p>Tickets: {{ selectedSeats.length }}</p>
+      <p>Price per ticket: {{ formatPrice(ticketPriceCents) }}</p>
+      <p>
+        <strong>Total: {{ formatPrice(totalCents) }}</strong>
+      </p>
+    </section>
 
     <button
       type="button"
