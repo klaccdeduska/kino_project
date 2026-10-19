@@ -359,7 +359,7 @@ docker compose up -d
 
 ```bash
 cd backend
-npm install
+npm install (прописывать только на новом компе)
 npm run start:dev
 ```
 
@@ -371,7 +371,7 @@ npm run start:dev
 
 ```bash
 cd frontend
-npm install
+npm install (прописывать только на новом компе)
 npm run dev
 ```
 
@@ -380,20 +380,20 @@ npm run dev
 
 Оба терминала должны оставаться работающими.
 
-В Windows PowerShell используйте `npm.cmd`, если запуск `npm`
+В Windows PowerShell (или в VS Code Power Shell) используйте `npm.cmd`, если запуск `npm`
 блокируется политикой выполнения сценариев.
 
 Backend:
 
 ```powershell
-npm.cmd install
+npm.cmd install (прописывать только на новом компе)
 npm.cmd run start:dev
 ```
 
 Frontend:
 
 ```powershell
-npm.cmd install
+npm.cmd install (прописывать только на новом компе)
 npm.cmd run dev
 ```
 
