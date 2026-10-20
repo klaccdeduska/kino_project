@@ -1,425 +1,413 @@
 # BOOBLICKI — Cinema Project
 
-Languages / Keeled / Языки:
-[English](#english) · [Eesti](#eesti) · [Русский](#русский)
+Languages / Keeled / Языки: [English](#english) · [Eesti](#eesti) · [Русский](#русский)
 
 ## English
 
-An educational cinema website project with movie listings and a seat selection interface.
+BOOBLICKI is an educational cinema website. Movies are stored in our own MariaDB database and delivered to the Vue frontend through our own NestJS REST API. The project no longer uses the external Apollo Kino API.
 
-### Features
+### Current features
 
-- Browse movie cards.
+- Display 12 movies loaded from MariaDB through the backend API.
 - Search movies by title.
-- View movie descriptions.
-- Demonstration seating plan: 5 rows with 8 seats each.
-- Select and deselect seats.
-- Display selected seat numbers.
-- Disable demonstration occupied seats.
-- Clear the selection.
+- View movie information: title, genre, duration, description, release year, director, and age rating.
+- Navigate from a movie listing to a separate seat selection page.
+- Demonstration seating layout: 5 rows × 8 seats, including unavailable seats.
+- Select and deselect available seats, see selected seats, and clear the selection.
 
-Selected seats are currently stored only in page memory.
-The selection resets when the page is refreshed or another movie is selected.
-Booking and payment have not been implemented yet.
+**Limitations:** Seats and their availability are currently demonstration data, not persisted reservations. Seat selection resets when the page is refreshed or a different movie is selected. Payment and completed bookings have not been implemented. Movie poster and trailer fields are available in the API but currently contain `null` in the initial dataset.
 
-### Technologies
+### Tech stack
 
-- Frontend: Vue 3, TypeScript, Vite.
-- Backend: NestJS, TypeScript.
-- Database: MariaDB.
-- Tools: Git, GitHub, Docker, Adminer.
-
-Integration with the external Apollo Kino API has been discontinued.
-Further development focuses on our own database.
+- **Frontend:** Vue 3, TypeScript, Vite, Vue Router.
+- **Backend:** NestJS, TypeScript, `mysql2`, `dotenv`.
+- **Database:** MariaDB 11, Docker Compose, persistent named volume.
+- **Development:** VS Code, Git, GitHub, Docker Desktop.
 
 ### Project structure
 
-- `frontend/` — website interface.
-- `frontend/src/App.vue` — movie listings, search and movie descriptions.
-- `frontend/src/components/SeatPicker.vue` — seat selection interface.
-- `backend/` — server application.
+```text
+kino_project/
+├── backend/
+│   ├── src/
+│   │   ├── main.ts                 # NestJS startup and CORS
+│   │   └── movies/
+│   │       ├── movies.controller.ts # Own REST API
+│   │       └── movies.database.ts   # MariaDB connection pool
+│   ├── .env                       # Local credentials; do not commit
+│   └── package.json
+├── frontend/
+│   └── src/
+│       ├── views/
+│       │   ├── MoviesView.vue      # Movie list and search
+│       │   └── BookingView.vue     # Separate seat selection page
+│       └── components/
+│           └── SeatPicker.vue      # Seat selector
+├── database/
+│   └── movies.sql                 # Initial database data
+├── docker-compose.movies.yml     # MariaDB container
+└── README.md
+```
 
-### Requirements
+### Requirements and first-time setup
 
-For local development, install:
-
-- Node.js 24.
-- Git.
-- Docker with Docker Compose support — for MariaDB.
-
-Clone the repository:
+Install Node.js (version 24 used during development), Git and Docker Desktop with Docker Compose. Clone the repository:
 
 ```bash
 git clone https://github.com/klaccdeduska/kino_project.git
 cd kino_project
 ```
 
-### Database
-
-Start Docker and run this command from the project root:
-
-```bash
-docker compose up -d
-```
-
-On a new computer, create the database, tables and initial data
-according to the project configuration. Starting the container
-does not transfer database contents from another computer.
-
-Backend connection settings are stored in a local `.env` file.
-Create it with your MariaDB connection settings.
-The `.env` file is excluded from Git and must not be committed
-to a public repository.
-
-### Starting the backend
-
-In the first terminal:
-
-```bash
-cd backend
-npm install
-npm run start:dev
-```
-
-The server usually starts at `http://localhost:3000`.
-
-### Starting the frontend
-
-In a second terminal, starting from the project root:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Open the address shown next to `Local` in the terminal.
-It is usually `http://localhost:5173`.
-
-Keep both terminals running.
-
-In Windows PowerShell, use `npm.cmd` if the execution policy
-blocks `npm`.
-
-Backend:
+Start Docker Desktop. From the **project root**, start MariaDB:
 
 ```powershell
+docker compose -f docker-compose.movies.yml up -d
+docker compose -f docker-compose.movies.yml ps
+```
+
+The database runs on `localhost:3308` (container port `3306`); database name: `kino`. On a **new, empty Docker data volume**, the SQL initialization file creates the initial movie records. If the volume already exists, restarting the container does not re-import the SQL file or overwrite existing data. Do not run `down -v` unless you intentionally want to delete database data.
+
+Create `backend/.env` locally using the MariaDB credentials configured in `docker-compose.movies.yml`:
+
+```dotenv
+DB_HOST=127.0.0.1
+DB_PORT=3308
+DB_USER=kino_user
+DB_PASSWORD=YOUR_MARIADB_PASSWORD
+DB_NAME=kino
+```
+
+The user and password must match the Compose configuration. `backend/.env` must be excluded from Git and never committed; only include placeholders in documentation. When using an existing volume, changing environment variables in Compose will not automatically change the database users' passwords.
+
+Install dependencies **once on a new computer**, or again when `package.json` / lockfiles change:
+
+```powershell
+cd backend
 npm.cmd install
+cd ..\frontend
+npm.cmd install
+cd ..
+```
+
+### Start the project (Windows PowerShell, every time)
+
+Open three terminals in VS Code. Run the following from `kino_project`:
+
+**1. Database — terminal 1:**
+
+```powershell
+docker compose -f docker-compose.movies.yml up -d
+```
+
+**2. Backend — terminal 2:**
+
+```powershell
+cd backend
 npm.cmd run start:dev
 ```
 
-Frontend:
+API: `http://localhost:3000/api/movies`
+
+**3. Frontend — terminal 3 (from the project root):**
 
 ```powershell
-npm.cmd install
+cd frontend
 npm.cmd run dev
 ```
 
-### Checking the interface
+Open the Vite `Local` URL, typically `http://localhost:5173`. Keep the backend and frontend terminals running. On macOS/Linux or where PowerShell permits npm scripts, `npm` can be used instead of `npm.cmd`.
 
-1. Open the movie listings.
-2. Enter part of a movie title in the search field.
-3. Click the movie details button.
-4. Select an available seat — it should turn green.
-5. Click it again — it should become unselected.
-6. Check that occupied seats cannot be selected.
-7. Click the clear selection button.
-8. Select another movie — the seat selection should reset.
+### API endpoints
 
-### Development plan
+| Method | Endpoint | Result |
+| --- | --- | --- |
+| `GET` | `/api/movies` | All movies from MariaDB |
+| `GET` | `/api/movies/:id` | One movie by ID (404 if not found) |
 
-- Movie showtimes.
-- Cinemas, halls and seats stored in the database.
-- User registration and login.
-- Persistent bookings.
-- Server-side seat availability checks.
-- Ticket price calculation.
-- Movie and showtime management.
-- Order checkout.
+Movie data includes `id`, `title`, `genre`, `duration` (minutes), `description`, `releaseYear`, `director`, `ageRating`, `poster` and `trailer`. For local development, CORS is enabled for `http://localhost:5173` in `backend/src/main.ts`.
 
-### Status
+### Checks and troubleshooting
 
-The project is under development.
-The seating plan is a demonstration.
+```powershell
+# From the project root: check the database container
+docker compose -f docker-compose.movies.yml ps
+
+# Open a MariaDB shell (uses the root password from Compose)
+docker compose -f docker-compose.movies.yml exec db mariadb -u root -p
+```
+
+Inside MariaDB:
+
+```sql
+USE kino;
+SELECT COUNT(*) FROM movies;
+SELECT id, title, duration FROM movies;
+```
+
+The initial dataset contains **12 movies**. If the frontend cannot load them, first check the API URL in your browser, then make sure the backend is running, `.env` matches MariaDB, and Vite is running on the expected CORS origin. If Vite selects another port, update the backend's CORS origin accordingly.
+
+### Planned improvements
+
+Movie posters, showtimes, cinemas/halls, persistent seat availability, registration/login, real booking and payment, movie management, and server-side booking validation.
 
 ---
 
 ## Eesti
 
-Õppeprojekt: kino veebileht filmikava ja istekohtade valimise liidesega.
+BOOBLICKI on õppeprojektina loodud kino veebileht. Filmide andmed asuvad meie enda MariaDB andmebaasis ning Vue kasutajaliides saab need meie NestJS REST API kaudu. Apollo Kino välist API-t enam ei kasutata.
 
-### Võimalused
+### Praegused võimalused
 
-- Filmikaartide vaatamine.
+- 12 filmi kuvamine oma andmebaasist.
 - Filmide otsimine pealkirja järgi.
-- Filmide kirjelduste vaatamine.
-- Näitlik saaliplaan: 5 rida, igas reas 8 istekohta.
-- Istekohtade valimine ja valiku tühistamine.
-- Valitud istekohtade numbrite kuvamine.
-- Näitlikult hõivatud istekohtade valimise blokeerimine.
-- Kõigi valikute tühistamine.
+- Filmi kirjeldus, žanr, kestus, väljalaskeaasta, režissöör ja vanusepiirang.
+- Filmide nimekirjast liikumine eraldi istekohtade valimise lehele.
+- Näitlik saaliplaan: 5 rida × 8 kohta; vabade kohtade valimine, valiku tühistamine ja hõivatud kohtade blokeerimine.
 
-Valitud istekohad salvestatakse praegu ainult lehe mällu.
-Lehe värskendamisel või teise filmi valimisel valik lähtestatakse.
-Broneerimine ja maksmine ei ole veel teostatud.
+**Piirangud:** Kohtade valik ei ole veel päris broneering ega salvestu andmebaasi; lehe värskendamisel või filmi vahetamisel valik lähtestatakse. Maksmine ei ole teostatud. Esialgsetel filmidel pole veel plakateid ja treilereid (`null`).
 
 ### Tehnoloogiad
 
-- Kasutajaliides: Vue 3, TypeScript, Vite.
-- Serverirakendus: NestJS, TypeScript.
-- Andmebaas: MariaDB.
-- Tööriistad: Git, GitHub, Docker, Adminer.
+Vue 3, TypeScript, Vite, Vue Router; NestJS, TypeScript, `mysql2`, `dotenv`; MariaDB 11 ja Docker Compose; Git ja GitHub.
 
-Välise Apollo Kino API kasutamine on lõpetatud.
-Edasine arendus keskendub oma andmebaasile.
+### Projekti olulised failid
 
-### Projekti struktuur
+- `frontend/src/views/MoviesView.vue` — filmikava ja otsing.
+- `frontend/src/views/BookingView.vue` — eraldi istekohtade valimise leht.
+- `frontend/src/components/SeatPicker.vue` — istekohtade valik.
+- `backend/src/movies/movies.controller.ts` — meie REST API.
+- `backend/src/movies/movies.database.ts` — MariaDB ühendus.
+- `backend/src/main.ts` — serveri käivitus ja CORS.
+- `database/movies.sql` — 12 filmi algandmed.
+- `docker-compose.movies.yml` — andmebaasi Docker Compose konfiguratsioon.
 
-- `frontend/` — veebilehe kasutajaliides.
-- `frontend/src/App.vue` — filmikava, otsing ja filmide kirjeldused.
-- `frontend/src/components/SeatPicker.vue` — istekohtade valimise liides.
-- `backend/` — serverirakendus.
+### Esmakordne ettevalmistus
 
-### Ettevalmistus
-
-Projekti kohalikuks käivitamiseks on vaja:
-
-- Node.js 24.
-- Git.
-- Docker koos Docker Compose’i toega — MariaDB jaoks.
-
-Klooni repositoorium:
-
-```bash
-git clone https://github.com/klaccdeduska/kino_project.git
-cd kino_project
-```
-
-### Andmebaas
-
-Käivita Docker ja sisesta projekti juurkaustas:
-
-```bash
-docker compose up -d
-```
-
-Uues arvutis tuleb luua andmebaas, tabelid ja algandmed
-vastavalt projekti seadistustele. Konteineri käivitamine
-ei kanna andmebaasi sisu teisest arvutist üle.
-
-Serverirakenduse ühenduse seadistused asuvad kohalikus `.env` failis.
-Loo fail oma MariaDB ühenduse andmetega.
-Faili `.env` ei lisata Git’i ning seda ei tohi avalikku
-repositooriumisse üles laadida.
-
-### Serverirakenduse käivitamine
-
-Esimeses terminalis:
-
-```bash
-cd backend
-npm install
-npm run start:dev
-```
-
-Server käivitub tavaliselt aadressil `http://localhost:3000`.
-
-### Kasutajaliidese käivitamine
-
-Teises terminalis, alustades projekti juurkaustast:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Ava terminalis rea `Local` juures kuvatud aadress.
-Tavaliselt on see `http://localhost:5173`.
-
-Mõlemad terminalid peavad jääma tööle.
-
-Kui Windows PowerShelli käivituspoliitika blokeerib käsu `npm`,
-kasuta selle asemel `npm.cmd`.
-
-Serverirakendus:
+Vaja on Node.js-i (arenduses kasutati versiooni 24), Giti ja Docker Desktopi.
 
 ```powershell
+git clone https://github.com/klaccdeduska/kino_project.git
+cd kino_project
+docker compose -f docker-compose.movies.yml up -d
+```
+
+Loo lokaalne fail `backend/.env`, kasutades `docker-compose.movies.yml` failis määratud kasutajat ja parooli:
+
+```dotenv
+DB_HOST=127.0.0.1
+DB_PORT=3308
+DB_USER=kino_user
+DB_PASSWORD=YOUR_MARIADB_PASSWORD
+DB_NAME=kino
+```
+
+Ära lisa `.env` faili GitHubi. Andmebaasi algandmed imporditakse automaatselt ainult siis, kui Docker loob esimest korda tühja andmemahu. Olemasolevat andmemahtu taaskäivitamine ei kustuta.
+
+Paigalda sõltuvused uues arvutis (või pärast sõltuvuste muudatusi):
+
+```powershell
+cd backend
 npm.cmd install
+cd ..\frontend
+npm.cmd install
+cd ..
+```
+
+### Projekti käivitamine (kolm terminali)
+
+Käivita Docker Desktop. Iga käskude plokk algab projekti juurkaustast.
+
+**1. Andmebaas:**
+
+```powershell
+docker compose -f docker-compose.movies.yml up -d
+```
+
+**2. Backend:**
+
+```powershell
+cd backend
 npm.cmd run start:dev
 ```
 
-Kasutajaliides:
+**3. Frontend:**
 
 ```powershell
-npm.cmd install
+cd frontend
 npm.cmd run dev
 ```
 
-### Kasutajaliidese kontrollimine
+Veebileht: `http://localhost:5173` (või Vite terminalis kuvatud aadress). API: `http://localhost:3000/api/movies`; üksik film: `http://localhost:3000/api/movies/1`.
 
-1. Ava filmikava.
-2. Sisesta otsinguväljale osa filmi pealkirjast.
-3. Vajuta filmi üksikasjade nuppu.
-4. Vali vaba istekoht — see peaks muutuma roheliseks.
-5. Vajuta samale istekohale uuesti — valik peaks tühistuma.
-6. Kontrolli, et hõivatud istekohta ei saa valida.
-7. Vajuta kõigi valikute tühistamise nuppu.
-8. Vali teine film — istekohtade valik peaks lähtestuma.
+Andmebaasi kontrollimiseks käivita juurkaustas:
 
-### Arendusplaan
+```powershell
+docker compose -f docker-compose.movies.yml ps
+docker compose -f docker-compose.movies.yml exec db mariadb -u root -p
+```
 
-- Filmiseansside ajakava.
-- Kinode, saalide ja istekohtade salvestamine andmebaasi.
-- Kasutajate registreerimine ja sisselogimine.
-- Broneeringute salvestamine.
-- Istekohtade saadavuse kontrollimine serveris.
-- Piletihinna arvutamine.
-- Filmide ja seansside haldamine.
-- Tellimuse vormistamine.
+Seejärel MariaDB-s:
 
-### Staatus
+```sql
+USE kino;
+SELECT COUNT(*) FROM movies;
+```
 
-Projekt on arendamisel.
-Saaliplaan on näitlik.
+### Edasine arendus
+
+Filmiplakatid, seansid, saalid, andmebaasis salvestatavad broneeringud, kasutajakontod, kohtade saadavuse kontroll ja maksmine. Projekt on arendamisel.
 
 ---
 
 ## Русский
 
-Учебный проект сайта кинотеатра с афишей и интерфейсом выбора мест.
+BOOBLICKI — учебный сайт кинотеатра. Теперь информация о фильмах хранится в **нашей MariaDB**, а frontend на Vue получает её через **наш REST API на NestJS**. Внешний Apollo Kino API больше не используется.
 
-### Возможности
+### Что уже работает
 
-- Просмотр карточек фильмов.
+- Загрузка 12 фильмов из MariaDB через собственный API.
 - Поиск фильмов по названию.
-- Просмотр описания фильма.
-- Демонстрационная схема зала: 5 рядов по 8 мест.
-- Выбор и снятие выбора мест.
-- Отображение выбранных мест.
-- Блокировка демонстрационных занятых мест.
-- Очистка выбора.
+- Просмотр названия, жанра, продолжительности, описания, года выпуска, режиссёра и возрастного ограничения.
+- Переход с афиши на отдельную страницу выбора мест для выбранного фильма.
+- Демонстрационный зал: 5 рядов по 8 мест, выбор и отмена выбора, показ выбранных мест, недоступные места и очистка выбора.
 
-Выбор мест пока хранится только в памяти страницы.
-Он сбрасывается при обновлении страницы или переключении фильма.
-Бронирование и оплата ещё не реализованы.
+**Пока не реализовано:** настоящая бронь мест в базе, оплата и оформление заказа. Выбранные места хранятся только в памяти страницы и сбрасываются после обновления или смены фильма. Поля постеров и трейлеров присутствуют в API, но в начальных данных пока имеют значение `null`.
 
 ### Технологии
 
-- Frontend: Vue 3, TypeScript, Vite.
-- Backend: NestJS, TypeScript.
-- База данных: MariaDB.
-- Инструменты: Git, GitHub, Docker, Adminer.
-
-Работа с внешним Apollo Kino API прекращена.
-Дальнейшая разработка ориентирована на собственную базу данных.
+- Frontend: **Vue 3, TypeScript, Vite, Vue Router**.
+- Backend: **NestJS, TypeScript, mysql2, dotenv**.
+- База: **MariaDB 11**, Docker Compose, постоянный Docker volume.
+- Инструменты: VS Code, Git, GitHub, Docker Desktop.
 
 ### Структура проекта
 
-- `frontend/` — интерфейс сайта.
-- `frontend/src/App.vue` — афиша, поиск и описание фильма.
-- `frontend/src/components/SeatPicker.vue` — интерфейс выбора мест.
-- `backend/` — серверная часть приложения.
+```text
+kino_project/
+├── backend/
+│   ├── src/
+│   │   ├── main.ts                  # Запуск NestJS и CORS
+│   │   └── movies/
+│   │       ├── movies.controller.ts # Собственный API фильмов
+│   │       └── movies.database.ts   # Подключение MariaDB
+│   ├── .env                        # Локальный пароль, не загружать в Git
+│   └── package.json
+├── frontend/
+│   └── src/
+│       ├── views/
+│       │   ├── MoviesView.vue       # Афиша и поиск
+│       │   └── BookingView.vue      # Отдельная страница выбора мест
+│       └── components/
+│           └── SeatPicker.vue
+├── database/
+│   └── movies.sql                  # Первоначальные 12 фильмов
+├── docker-compose.movies.yml      # Контейнер MariaDB
+└── README.md
+```
 
-### Подготовка
+### Что нужно установить
 
-Для локального запуска нужны:
+Node.js (в разработке использовалась версия 24), Git, Docker Desktop с поддержкой Docker Compose.
 
-- Node.js 24.
-- Git.
-- Docker с поддержкой Docker Compose — для MariaDB.
+Если проект ещё не скачан:
 
-Клонируйте репозиторий:
-
-```bash
+```powershell
 git clone https://github.com/klaccdeduska/kino_project.git
 cd kino_project
 ```
 
-### База данных
+### Первый запуск на новом компьютере
 
-Запустите Docker и выполните из корня проекта:
-
-```bash
-docker compose up -d
-```
-
-На новом компьютере необходимо создать базу, таблицы и начальные
-данные по настройкам проекта. Запуск контейнера сам по себе
-не переносит данные с другого компьютера.
-
-Настройки подключения backend находятся в локальном `.env`.
-Создайте его с параметрами вашей MariaDB.
-Файл `.env` не хранится в Git и не должен содержаться
-в публичном репозитории.
-
-### Запуск backend
-
-В первом терминале:
-
-```bash
-cd backend
-npm install (прописывать только на новом компе)
-npm run start:dev
-```
-
-Обычно сервер запускается на `http://localhost:3000`.
-
-### Запуск frontend
-
-Во втором терминале, из корня проекта:
-
-```bash
-cd frontend
-npm install (прописывать только на новом компе)
-npm run dev
-```
-
-Откройте адрес из строки `Local` в терминале.
-Обычно это `http://localhost:5173`.
-
-Оба терминала должны оставаться работающими.
-
-В Windows PowerShell (или в VS Code Power Shell) используйте `npm.cmd`, если запуск `npm`
-блокируется политикой выполнения сценариев.
-
-Backend:
+Сначала открой Docker Desktop. В корне проекта выполни:
 
 ```powershell
-npm.cmd install (прописывать только на новом компе)
+docker compose -f docker-compose.movies.yml up -d
+```
+
+База `kino` доступна на `localhost:3308` (внутри контейнера — порт `3306`). При **первом создании пустого Docker volume** файл инициализации SQL загружает 12 фильмов. При повторном запуске данные сохраняются. Не используй `docker compose down -v`, если не хочешь удалить данные базы.
+
+Создай **`backend/.env`** и подставь пароль из `docker-compose.movies.yml`:
+
+```dotenv
+DB_HOST=127.0.0.1
+DB_PORT=3308
+DB_USER=kino_user
+DB_PASSWORD=YOUR_MARIADB_PASSWORD
+DB_NAME=kino
+```
+
+Проверь, что имя пользователя и пароль совпадают с настройками Docker Compose. Не добавляй `.env` в GitHub. Если база уже была создана, изменение пароля в Compose не изменяет пароль существующего пользователя автоматически.
+
+Установка зависимостей **только при первой настройке компьютера** или после изменения зависимостей:
+
+```powershell
+cd backend
+npm.cmd install
+cd ..\frontend
+npm.cmd install
+cd ..
+```
+
+### Как запускать проект каждый раз — три терминала VS Code
+
+Открой папку `kino_project`. Запусти Docker Desktop. Команды ниже рассчитаны на запуск **из корня проекта** в отдельных терминалах.
+
+**Терминал 1 — база данных:**
+
+```powershell
+docker compose -f docker-compose.movies.yml up -d
+```
+
+**Терминал 2 — backend:**
+
+```powershell
+cd backend
 npm.cmd run start:dev
 ```
 
-Frontend:
+API фильмов: http://localhost:3000/api/movies
+
+**Терминал 3 — frontend:**
 
 ```powershell
-npm.cmd install (прописывать только на новом компе)
+cd frontend
 npm.cmd run dev
 ```
 
-### Проверка интерфейса
+Открой адрес `Local`, который покажет Vite: обычно http://localhost:5173. Оставь оба терминала с серверами открытыми. В Windows PowerShell используется `npm.cmd`, чтобы избежать возможной блокировки `npm.ps1`.
 
-1. Откройте афишу.
-2. Введите часть названия фильма в поле поиска.
-3. Нажмите «Подробнее».
-4. Выберите свободное место — оно должно стать зелёным.
-5. Нажмите его повторно — выбор должен сняться.
-6. Проверьте, что занятое место нельзя выбрать.
-7. Нажмите «Очистить выбор».
-8. Переключите фильм — выбранные места должны сброситься.
+### Наш API
+
+| Метод | Адрес | Результат |
+| --- | --- | --- |
+| `GET` | `/api/movies` | Все фильмы из MariaDB |
+| `GET` | `/api/movies/:id` | Один фильм по ID; 404, если не найден |
+
+Каждый фильм содержит `id`, `title`, `genre`, `duration` (в минутах), `description`, `releaseYear`, `director`, `ageRating`, `poster`, `trailer`.
+
+В `backend/src/main.ts` разрешён CORS для `http://localhost:5173`. Если Vite запустится на другом порту, настройку CORS нужно обновить.
+
+### Проверка базы и API
+
+В корне проекта:
+
+```powershell
+docker compose -f docker-compose.movies.yml ps
+docker compose -f docker-compose.movies.yml exec db mariadb -u root -p
+```
+
+В MariaDB (пароль root указан в Compose):
+
+```sql
+USE kino;
+SELECT COUNT(*) FROM movies;
+SELECT id, title, duration FROM movies;
+```
+
+В начальной базе должно быть **12 фильмов**. Если сайт не показывает фильмы, открой http://localhost:3000/api/movies и проверь, что backend запущен, `.env` настроен правильно и frontend работает на нужном порту.
 
 ### План разработки
 
-- Расписание сеансов.
-- Кинотеатры, залы и места в базе данных.
-- Регистрация и вход пользователей.
-- Сохранение бронирований.
-- Проверка доступности мест на сервере.
-- Расчёт стоимости билетов.
-- Управление фильмами и сеансами.
-- Оформление заказа.
+Постеры и трейлеры, расписание сеансов, залы, сохранение бронирований, проверка свободных мест на сервере, регистрация пользователей, полноценная продажа билетов и управление фильмами.
 
-### Статус
-
-Проект находится в разработке.
-Схема мест является демонстрационной.
+**Статус:** проект в разработке; система выбора мест пока демонстрационная.
