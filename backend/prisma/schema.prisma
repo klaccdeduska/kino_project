@@ -1,0 +1,39 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "mysql" // Prisma's MySQL connector also supports MariaDB.
+}
+
+model Movie {
+  // Existing SQL uses manually assigned IDs, not AUTO_INCREMENT.
+  id          Int      @id
+  title       String   @db.VarChar(255)
+  genre       String   @db.VarChar(255)
+  duration    Int      @db.UnsignedInt
+  description String   @db.Text
+  releaseYear Int      @map("release_year") @db.UnsignedSmallInt
+  director    String   @db.VarChar(255)
+  ageRating   String   @map("age_rating") @db.VarChar(20)
+  poster      String?  @map("poster_url") @db.VarChar(1000)
+  trailer     String?  @map("trailer_url") @db.VarChar(1000)
+  reviews     Review[]
+
+  @@map("movies")
+}
+
+model Review {
+  id         Int    @id @default(autoincrement())
+  authorName String @map("author_name") @db.VarChar(100)
+  text       String @db.Text
+  // The real column storing the related movie's primary key.
+  movieId    Int    @map("movie_id")
+  // A navigation field for Prisma queries; not an extra SQL column.
+  movie      Movie  @relation(fields: [movieId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([movieId])
+  @@map("reviews")
+}
