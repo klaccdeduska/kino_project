@@ -23,6 +23,13 @@ interface MovieRow extends RowDataPacket {
   trailer: string | null;
 }
 
+interface SessionRow extends RowDataPacket {
+  id: number;
+  movieId: number;
+  date: string;
+  time: string;
+}
+
 const SELECT_MOVIES = `
   SELECT
     id,
@@ -45,6 +52,54 @@ export class MoviesController {
   async findAll() {
     const [rows] = await pool.query<MovieRow[]>(
       `${SELECT_MOVIES} ORDER BY id`
+    );
+
+    return rows;
+  }
+
+  @Get(':id/sessions/:sessionId')
+  async findSession(
+    @Param('id', ParseIntPipe) movieId: number,
+    @Param('sessionId', ParseIntPipe) sessionId: number
+  ) {
+    const [rows] = await pool.query<SessionRow[]>(
+      `
+      SELECT
+        id,
+        movie_id AS movieId,
+        DATE_FORMAT(starts_at, '%Y-%m-%d') AS date,
+        DATE_FORMAT(starts_at, '%H:%i') AS time
+      FROM sessions
+      WHERE movie_id = ? AND id = ?
+    `,
+      [movieId, sessionId]
+    );
+
+    const session = rows[0];
+
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    return session;
+  }
+
+  @Get(':id/sessions')
+  async findSessions(
+    @Param('id', ParseIntPipe) movieId: number
+  ) {
+    const [rows] = await pool.query<SessionRow[]>(
+      `
+      SELECT
+        id,
+        movie_id AS movieId,
+        DATE_FORMAT(starts_at, '%Y-%m-%d') AS date,
+        DATE_FORMAT(starts_at, '%H:%i') AS time
+      FROM sessions
+      WHERE movie_id = ?
+      ORDER BY starts_at, id
+    `,
+      [movieId]
     );
 
     return rows;

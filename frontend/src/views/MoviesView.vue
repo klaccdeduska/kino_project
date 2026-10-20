@@ -20,20 +20,57 @@ const search = ref('')
 const selectedMovieId = ref<number | null>(null)
 const sessionsMovieId = ref<number | null>(null)
 
-const sessions = [
-  { id: 1, movieId: 1, date: '2026-10-20', time: '14:30' },
-  { id: 2, movieId: 1, date: '2026-10-20', time: '17:00' },
-  { id: 3, movieId: 2, date: '2026-10-20', time: '15:00' },
-  { id: 4, movieId: 2, date: '2026-10-21', time: '20:15' },
-]
-
-function getMovieSessions(movieId: number) {
-  return sessions.filter((session) => session.movieId === movieId)
+interface Session {
+  id: number
+  movieId: number
+  date: string
+  time: string
 }
 
-function toggleSessions(movieId: number) {
-  sessionsMovieId.value =
-    sessionsMovieId.value === movieId ? null : movieId
+const sessions = ref<Session[]>([])
+const sessionsLoading = ref(false)
+const sessionsError = ref('')
+
+function getMovieSessions(movieId: number) {
+  return sessions.value.filter((session) => session.movieId === movieId)
+}
+
+async function toggleSessions(movieId: number) {
+  if (sessionsMovieId.value === movieId) {
+    sessionsMovieId.value = null
+    return
+  }
+
+  sessionsMovieId.value = movieId
+  sessions.value = []
+  sessionsError.value = ''
+  sessionsLoading.value = true
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/movies/${movieId}/sessions`
+    )
+
+    if (!response.ok) {
+      throw new Error('Failed to load sessions')
+    }
+
+    const data: Session[] = await response.json()
+
+    if (sessionsMovieId.value === movieId) {
+      sessions.value = data
+    }
+  } catch (err) {
+    if (sessionsMovieId.value === movieId) {
+      sessionsError.value = 'Could not load sessions.'
+    }
+
+    console.error(err)
+  } finally {
+    if (sessionsMovieId.value === movieId) {
+      sessionsLoading.value = false
+    }
+  }
 }
 const loading = ref(true)
 const error = ref('')
@@ -120,21 +157,31 @@ onMounted(loadMovies)
         <div v-if="sessionsMovieId === movie.id">
           <h3>Available sessions</h3>
 
-          <p v-if="getMovieSessions(movie.id).length === 0">
+          <p v-if="sessionsLoading">Loading sessions...</p>
+
+          <p v-else-if="sessionsError">
+            {{ sessionsError }}
+          </p>
+
+          <p v-else-if="sessions.length === 0">
             No sessions available.
           </p>
 
-          <div v-for="session in getMovieSessions(movie.id)" :key="session.id">
-            <span>{{ session.date }} — {{ session.time }} </span>
+          <template v-else>
+            <div v-for="session in sessions" :key="session.id">
+              <span>{{ session.date }} — {{ session.time }} </span>
 
-            <RouterLink :to="{
-              name: 'booking',
-              params: { movieId: movie.id },
-              query: { sessionId: session.id, date: session.date, time: session.time },
-            }">
-              Choose seats
-            </RouterLink>
-          </div>
+              <RouterLink :to="{
+                name: 'booking',
+                params: { movieId: movie.id },
+                query: {
+                  sessionId: session.id,
+                },
+              }">
+                Choose seats
+              </RouterLink>
+            </div>
+          </template>
         </div>
 
         <hr />
