@@ -82,6 +82,12 @@ onMounted(loadMovies)
 
     <template v-else>
       <article v-for="movie in filteredMovies" :key="movie.id">
+        <img
+          v-if="movie.poster"
+          :src="movie.poster"
+          :alt="movie.title + ' poster'"
+           width="180"
+      />
         <h2>{{ movie.title }}</h2>
 
         <p>
