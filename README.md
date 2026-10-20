@@ -6,7 +6,7 @@ Languages / Keeled / Языки: [English](#english) · [Eesti](#eesti) · [Ру
 
 ### Prisma ORM practice
 
-Prisma ORM 7 is installed in `backend` for learning alongside the existing mysql2 API. Start with the [beginner Prisma guide](backend/README.md): Movie and Review models, one-to-many relations, safe existing-database baselining, and query examples. The API continues to use its existing SQL queries.
+Prisma ORM 7 is installed in `backend` for learning alongside the existing mysql2 API. Start with the [beginner Prisma guide](backend/README.md#english): Movie and Review models, one-to-many relations, safe existing-database baselining, and query examples. The API continues to use its existing SQL queries.
 
 Run from `backend` after configuring `.env` and following the guide's first-time baseline instructions:
 
@@ -171,7 +171,21 @@ Movie posters, showtimes, cinemas/halls, persistent seat availability, registrat
 
 ## Eesti
 
-Prisma ORM: [juhend, seosed, migratsioonid ja algandmed (inglise keeles)](backend/README.md).
+### Prisma ORM-i harjutamine
+
+Prisma ORM 7 on paigaldatud kausta `backend` õppimiseks olemasoleva mysql2 API kõrvale. Alusta [eestikeelsest Prisma juhendist](backend/README.md#eesti): mudelid Movie ja Review, üks-mitmele seosed, olemasoleva andmebaasi ohutu algmigratsiooni registreerimine ning päringunäited. API kasutab endiselt olemasolevaid SQL-päringuid.
+
+Käivita kaustas `backend` pärast `.env` seadistamist ja juhendi esmakordse algmigratsiooni juhiste järgimist:
+
+```powershell
+npm.cmd run prisma:validate
+npm.cmd run prisma:deploy
+npm.cmd run prisma:generate
+npm.cmd run prisma:seed
+npm.cmd run prisma:status
+```
+
+Oma skeemimuudatusteks kasuta `npm.cmd run prisma:migrate -- --name describe_change` ja seejärel `npm.cmd run prisma:generate`. Arendusmigratsioonid vajavad eraldi variandmebaasi; seadistamine on juhendis. Seed lisab failist `database/movies.sql` puuduvad filmid 1–3 ning säilitab olemasolevad kirjed.
 
 BOOBLICKI on õppeprojektina loodud kino veebileht. Filmide andmed asuvad meie enda MariaDB andmebaasis ning Vue kasutajaliides saab need meie NestJS REST API kaudu. Apollo Kino välist API-t enam ei kasutata.
 
@@ -181,28 +195,46 @@ BOOBLICKI on õppeprojektina loodud kino veebileht. Filmide andmed asuvad meie e
 - Filmide otsimine pealkirja järgi.
 - Filmi kirjeldus, žanr, kestus, väljalaskeaasta, režissöör ja vanusepiirang.
 - Filmide nimekirjast liikumine eraldi istekohtade valimise lehele.
-- Näitlik saaliplaan: 5 rida × 8 kohta; vabade kohtade valimine, valiku tühistamine ja hõivatud kohtade blokeerimine.
+- Näitlik saaliplaan: 5 rida × 8 kohta, sealhulgas hõivatud kohad.
+- Vabade kohtade valimine ja valiku tühistamine, valitud kohtade kuvamine ning kogu valiku puhastamine.
 
-**Piirangud:** Kohtade valik ei ole veel päris broneering ega salvestu andmebaasi; lehe värskendamisel või filmi vahetamisel valik lähtestatakse. Maksmine ei ole teostatud. Esialgsetel filmidel pole veel plakateid ja treilereid (`null`).
+**Piirangud:** Kohtade valik ei ole veel päris broneering ega salvestu andmebaasi; lehe värskendamisel või filmi vahetamisel valik lähtestatakse. Maksmine ja broneeringu lõplik vormistamine ei ole teostatud. Esialgsetel filmidel pole veel plakateid ja treilereid (`null`).
 
 ### Tehnoloogiad
 
-Vue 3, TypeScript, Vite, Vue Router; NestJS, TypeScript, `mysql2`, `dotenv`; MariaDB 11 ja Docker Compose; Git ja GitHub.
+- **Frontend:** Vue 3, TypeScript, Vite, Vue Router.
+- **Backend:** NestJS, TypeScript, `mysql2`, `dotenv`.
+- **Andmebaas:** MariaDB 11, Docker Compose, püsiv nimeline andmemaht.
+- **Arendus:** VS Code, Git, GitHub, Docker Desktop.
 
-### Projekti olulised failid
+### Projekti struktuur
 
-- `frontend/src/views/MoviesView.vue` — filmikava ja otsing.
-- `frontend/src/views/BookingView.vue` — eraldi istekohtade valimise leht.
-- `frontend/src/components/SeatPicker.vue` — istekohtade valik.
-- `backend/src/movies/movies.controller.ts` — meie REST API.
-- `backend/src/movies/movies.database.ts` — MariaDB ühendus.
-- `backend/src/main.ts` — serveri käivitus ja CORS.
-- `database/movies.sql` — 12 filmi algandmed.
-- `docker-compose.movies.yml` — andmebaasi Docker Compose konfiguratsioon.
+```text
+kino_project/
+├── backend/
+│   ├── src/
+│   │   ├── main.ts                 # NestJS-i käivitus ja CORS
+│   │   └── movies/
+│   │       ├── movies.controller.ts # Meie REST API
+│   │       └── movies.database.ts   # MariaDB ühenduste kogum
+│   ├── .env                       # Kohalikud ühendusandmed; ära lisa Giti
+│   └── package.json
+├── frontend/
+│   └── src/
+│       ├── views/
+│       │   ├── MoviesView.vue      # Filmide nimekiri ja otsing
+│       │   └── BookingView.vue     # Eraldi istekohtade valimise leht
+│       └── components/
+│           └── SeatPicker.vue      # Istekohtade valik
+├── database/
+│   └── movies.sql                 # Andmebaasi algandmed
+├── docker-compose.movies.yml     # MariaDB konteiner
+└── README.md
+```
 
 ### Esmakordne ettevalmistus
 
-Vaja on Node.js-i (arenduses kasutati versiooni 24), Giti ja Docker Desktopi.
+Vaja on Node.js-i (arenduses kasutati versiooni 24), Giti ja Docker Desktopi koos Docker Compose’iga. Käivita Docker Desktop.
 
 ```powershell
 git clone https://github.com/klaccdeduska/kino_project.git
@@ -220,7 +252,7 @@ DB_PASSWORD=YOUR_MARIADB_PASSWORD
 DB_NAME=kino
 ```
 
-Ära lisa `.env` faili GitHubi. Andmebaasi algandmed imporditakse automaatselt ainult siis, kui Docker loob esimest korda tühja andmemahu. Olemasolevat andmemahtu taaskäivitamine ei kustuta.
+Ära lisa `.env` faili GitHubi. Andmebaasi algandmed imporditakse automaatselt ainult siis, kui Docker loob esimest korda tühja andmemahu. Olemasoleva andmemahu taaskäivitamine ei impordi SQL-faili uuesti ega kirjuta andmeid üle. Ära kasuta `down -v`, kui sa ei soovi andmebaasi andmeid kustutada. Andmebaas `kino` töötab aadressil `localhost:3308` (konteineri port `3306`). Kasutaja ja parool peavad vastama Compose’i seadistusele; olemasoleva andmemahu korral ei muuda Compose’i muutujate muutmine andmebaasi kasutajate paroole automaatselt. Dokumentatsioonis kasuta ainult näidisparoole.
 
 Paigalda sõltuvused uues arvutis (või pärast sõltuvuste muudatusi):
 
@@ -256,7 +288,20 @@ cd frontend
 npm.cmd run dev
 ```
 
+Hoia backendi ja frontendi terminalid töös. macOS-is/Linuxis või sobiva PowerShelli seadistuse korral võib kasutada `npm` käsku `npm.cmd` asemel.
+
 Veebileht: `http://localhost:5173` (või Vite terminalis kuvatud aadress). API: `http://localhost:3000/api/movies`; üksik film: `http://localhost:3000/api/movies/1`.
+
+### API otspunktid
+
+| Meetod | Otspunkt | Tulemus |
+| --- | --- | --- |
+| `GET` | `/api/movies` | Kõik filmid MariaDB-st |
+| `GET` | `/api/movies/:id` | Üks film ID järgi; puudumisel 404 |
+
+Filmi andmed sisaldavad `id`, `title`, `genre`, `duration` (minutites), `description`, `releaseYear`, `director`, `ageRating`, `poster` ja `trailer`. Kohalikus arenduses on failis `backend/src/main.ts` CORS lubatud aadressile `http://localhost:5173`.
+
+### Kontroll ja tõrkeotsing
 
 Andmebaasi kontrollimiseks käivita juurkaustas:
 
@@ -265,22 +310,39 @@ docker compose -f docker-compose.movies.yml ps
 docker compose -f docker-compose.movies.yml exec db mariadb -u root -p
 ```
 
-Seejärel MariaDB-s:
+Seejärel MariaDB-s (root-parool on Compose’i seadistuses):
 
 ```sql
 USE kino;
 SELECT COUNT(*) FROM movies;
+SELECT id, title, duration FROM movies;
 ```
+
+Algandmetes on **12 filmi**. Kui kasutajaliides neid ei laadi, kontrolli esmalt brauseris API aadressi, seejärel backendi tööd, `.env` vastavust MariaDB-le ja Vite’i CORS-aadressi. Kui Vite valib teise pordi, uuenda backendi CORS-i seadistust.
 
 ### Edasine arendus
 
-Filmiplakatid, seansid, saalid, andmebaasis salvestatavad broneeringud, kasutajakontod, kohtade saadavuse kontroll ja maksmine. Projekt on arendamisel.
+Filmiplakatid ja treilerid, seansid, kinod ja saalid, püsiv kohtade saadavus, registreerimine ja sisselogimine, päris broneerimine ja maksmine, filmide haldus ning broneeringute serveripoolne valideerimine. Projekt on arendamisel.
 
 ---
 
 ## Русский
 
-Prisma ORM: [учебник, связи, миграции и начальные данные (на английском)](backend/README.md).
+### Практика Prisma ORM
+
+Prisma ORM 7 установлен в `backend` для обучения рядом с существующим API на mysql2. Начни с [руководства Prisma на русском](backend/README.md#русский): модели Movie и Review, связи один ко многим, безопасная регистрация исходной миграции существующей базы и примеры запросов. API продолжает использовать существующие SQL-запросы.
+
+Выполняй из `backend` после настройки `.env` и выполнения инструкций руководства по первоначальной регистрации миграции:
+
+```powershell
+npm.cmd run prisma:validate
+npm.cmd run prisma:deploy
+npm.cmd run prisma:generate
+npm.cmd run prisma:seed
+npm.cmd run prisma:status
+```
+
+Для своих изменений схемы: `npm.cmd run prisma:migrate -- --name describe_change`, затем `npm.cmd run prisma:generate`. Миграциям разработки нужна отдельная теневая база; её настройка описана в руководстве. Seed добавляет отсутствующие фильмы 1–3 из `database/movies.sql`, сохраняя существующие записи.
 
 BOOBLICKI — учебный сайт кинотеатра. Теперь информация о фильмах хранится в **нашей MariaDB**, а frontend на Vue получает её через **наш REST API на NestJS**. Внешний Apollo Kino API больше не используется.
 
@@ -357,7 +419,7 @@ DB_PASSWORD=YOUR_MARIADB_PASSWORD
 DB_NAME=kino
 ```
 
-Проверь, что имя пользователя и пароль совпадают с настройками Docker Compose. Не добавляй `.env` в GitHub. Если база уже была создана, изменение пароля в Compose не изменяет пароль существующего пользователя автоматически.
+Проверь, что имя пользователя и пароль совпадают с настройками Docker Compose. Исключи `.env` из Git и не добавляй его в GitHub; в документации используй только примеры паролей. Если база уже была создана, изменение пароля в Compose не изменяет пароль существующего пользователя автоматически.
 
 Установка зависимостей **только при первой настройке компьютера** или после изменения зависимостей:
 
@@ -395,7 +457,7 @@ cd frontend
 npm.cmd run dev
 ```
 
-Открой адрес `Local`, который покажет Vite: обычно http://localhost:5173. Оставь оба терминала с серверами открытыми. В Windows PowerShell используется `npm.cmd`, чтобы избежать возможной блокировки `npm.ps1`.
+Открой адрес `Local`, который покажет Vite: обычно http://localhost:5173. Оставь оба терминала с серверами открытыми. В Windows PowerShell используется `npm.cmd`, чтобы избежать возможной блокировки `npm.ps1`. На macOS/Linux или при подходящих настройках PowerShell можно использовать `npm`.
 
 ### Наш API
 
