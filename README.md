@@ -4,6 +4,23 @@ Languages / Keeled / Языки: [English](#english) · [Eesti](#eesti) · [Ру
 
 ## English
 
+### Prisma ORM practice
+
+Prisma ORM 7 is installed in `backend` for learning alongside the existing mysql2 API. Start with the [beginner Prisma guide](backend/README.md): Movie and Review models, one-to-many relations, safe existing-database baselining, and query examples. The API continues to use its existing SQL queries.
+
+Run from `backend` after configuring `.env` and following the guide's first-time baseline instructions:
+
+```powershell
+npm.cmd run prisma:validate
+npm.cmd run prisma:deploy
+npm.cmd run prisma:generate
+npm.cmd run prisma:seed
+npm.cmd run prisma:status
+```
+
+For your own schema changes: `npm.cmd run prisma:migrate -- --name describe_change`, then `npm.cmd run prisma:generate`. Development migrations require a separate shadow database; setup is in the guide. The seed inserts missing movies 1-3 from `database/movies.sql` and preserves existing rows.
+
+
 BOOBLICKI is an educational cinema website. Movies are stored in our own MariaDB database and delivered to the Vue frontend through our own NestJS REST API. The project no longer uses the external Apollo Kino API.
 
 ### Current features
@@ -154,6 +171,8 @@ Movie posters, showtimes, cinemas/halls, persistent seat availability, registrat
 
 ## Eesti
 
+Prisma ORM: [juhend, seosed, migratsioonid ja algandmed (inglise keeles)](backend/README.md).
+
 BOOBLICKI on õppeprojektina loodud kino veebileht. Filmide andmed asuvad meie enda MariaDB andmebaasis ning Vue kasutajaliides saab need meie NestJS REST API kaudu. Apollo Kino välist API-t enam ei kasutata.
 
 ### Praegused võimalused
@@ -260,6 +279,8 @@ Filmiplakatid, seansid, saalid, andmebaasis salvestatavad broneeringud, kasutaja
 ---
 
 ## Русский
+
+Prisma ORM: [учебник, связи, миграции и начальные данные (на английском)](backend/README.md).
 
 BOOBLICKI — учебный сайт кинотеатра. Теперь информация о фильмах хранится в **нашей MariaDB**, а frontend на Vue получает её через **наш REST API на NestJS**. Внешний Apollo Kino API больше не используется.
 

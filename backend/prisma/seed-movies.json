@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "title": "Dune: Part Two",
+    "genre": "Science fiction / Adventure",
+    "duration": 166,
+    "description": "Paul Atreides joins the Fremen and faces a choice between love and the fate of the universe.",
+    "releaseYear": 2024,
+    "director": "Denis Villeneuve",
+    "ageRating": "12+",
+    "poster": "https://s3.amazonaws.com/nightjarprod/content/uploads/sites/189/2024/05/29150236/czembW0Rk1Ke7lCJGahbOhdCuhV-scaled.jpg",
+    "trailer": null
+  },
+  {
+    "id": 2,
+    "title": "Interstellar",
+    "genre": "Science fiction / Drama",
+    "duration": 169,
+    "description": "A team of astronauts travels beyond Earth in search of a new home for humanity.",
+    "releaseYear": 2014,
+    "director": "Christopher Nolan",
+    "ageRating": "12+",
+    "poster": "https://m.media-amazon.com/images/M/MV5BYzdjMDAxZGItMjI2My00ODA1LTlkNzItOWFjMDU5ZDJlYWY3XkEyXkFqcGc@._V1_.jpg",
+    "trailer": null
+  },
+  {
+    "id": 3,
+    "title": "Oppenheimer",
+    "genre": "Biography / Drama",
+    "duration": 180,
+    "description": "The story of physicist J. Robert Oppenheimer and the development of the atomic bomb.",
+    "releaseYear": 2023,
+    "director": "Christopher Nolan",
+    "ageRating": "15+",
+    "poster": "https://thumb.wikimedia.org/wikipedia/en/thumb/4/4a/Oppenheimer_%28film%29.jpg/250px-Oppenheimer_%28film%29.jpg?utm_source=en.wikipedia.org&utm_campaign=parser&utm_content=thumbnail",
+    "trailer": null
+  }
+]
