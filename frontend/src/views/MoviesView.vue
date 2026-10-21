@@ -30,9 +30,38 @@ interface Session {
 const sessions = ref<Session[]>([])
 const sessionsLoading = ref(false)
 const sessionsError = ref('')
+const selectedDate = ref('')
 
-function getMovieSessions(movieId: number) {
-  return sessions.value.filter((session) => session.movieId === movieId)
+const filteredSessions = computed(() => {
+  if (selectedDate.value === '') {
+    return sessions.value
+  }
+
+  return sessions.value.filter(
+    (session) => session.date === selectedDate.value
+  )
+})
+
+function formatSessionDate(date: string) {
+  const [year, month, day] = date.split('-')
+
+  return `${day}.${month}.${year}`
+}
+
+function getSessionEndTime(time: string, duration: number) {
+  const [hours = 0, minutes = 0] = time.split(':').map(Number)
+
+  const endMinutes = hours * 60 + minutes + duration
+  const endHours = Math.floor(endMinutes / 60) % 24
+  const remainingMinutes = endMinutes % 60
+
+  return `${String(endHours).padStart(2, '0')}:${String(remainingMinutes).padStart(2, '0')}`
+}
+
+function endsNextDay(time: string, duration: number) {
+  const [hours = 0, minutes = 0] = time.split(':').map(Number)
+
+  return hours * 60 + minutes + duration >= 24 * 60
 }
 
 async function toggleSessions(movieId: number) {
@@ -42,6 +71,7 @@ async function toggleSessions(movieId: number) {
   }
 
   sessionsMovieId.value = movieId
+  selectedDate.value = ''
   sessions.value = []
   sessionsError.value = ''
   sessionsLoading.value = true
@@ -157,19 +187,34 @@ onMounted(loadMovies)
         <div v-if="sessionsMovieId === movie.id">
           <h3>Available sessions</h3>
 
+          <label>
+            Date:
+            <input v-model="selectedDate" type="date" />
+          </label>
+
+          <button type="button" @click="selectedDate = ''">
+            All dates
+          </button>
+
           <p v-if="sessionsLoading">Loading sessions...</p>
 
           <p v-else-if="sessionsError">
             {{ sessionsError }}
           </p>
 
-          <p v-else-if="sessions.length === 0">
-            No sessions available.
+          <p v-else-if="filteredSessions.length === 0">
+            {{ selectedDate ? 'No sessions available for this date.' : 'No sessions available.' }}
           </p>
 
           <template v-else>
-            <div v-for="session in sessions" :key="session.id">
-              <span>{{ session.date }} — {{ session.time }} </span>
+            <div v-for="session in filteredSessions" :key="session.id">
+              <span>
+                {{ formatSessionDate(session.date) }} —
+                {{ session.time }}–{{ getSessionEndTime(session.time, movie.duration) }}
+                <small v-if="endsNextDay(session.time, movie.duration)">
+                  (next day)
+                </small>
+              </span>
 
               <RouterLink :to="{
                 name: 'booking',
