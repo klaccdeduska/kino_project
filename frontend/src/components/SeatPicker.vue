@@ -39,6 +39,30 @@ const categoryLabels: Record<SeatCategory, string> = {
   vip: 'VIP',
 }
 
+const seatCategories = [
+  {
+    id: 'standard',
+    title: 'Standard',
+    priceCents: ticketPriceCents,
+    priceNote: 'per person',
+    description: 'A standard seat for one guest.',
+  },
+  {
+    id: 'double',
+    title: 'Double',
+    priceCents: ticketPriceCents * 2,
+    priceNote: 'for two',
+    description: 'A two-person sofa. Both seats are selected together.',
+  },
+  {
+    id: 'vip',
+    title: 'VIP',
+    priceCents: vipTicketPriceCents,
+    priceNote: 'per person',
+    description: 'A reclining seat with a massage function.',
+  },
+]
+
 function getGroupCount(row: HallRow) {
   return row.category === 'double'
     ? seatsPerRow / 2
@@ -232,31 +256,34 @@ function clearSelection() {
       </div>
     </div>
 
-    <div class="seat-legend" aria-label="Seat categories and availability">
-      <span class="legend-item">
-        <span
-          class="legend-dot legend-dot--standard"
-          aria-hidden="true"
-        ></span>
-        Standard · {{ formatPrice(ticketPriceCents) }}
-      </span>
+    <section class="seat-categories" aria-label="Seat categories">
+      <article
+        v-for="category in seatCategories"
+        :key="category.id"
+        class="category-card"
+      >
+        <div class="category-heading">
+          <span
+            class="legend-dot"
+            :class="`legend-dot--${category.id}`"
+            aria-hidden="true"
+          ></span>
 
-      <span class="legend-item">
-        <span
-          class="legend-dot legend-dot--double"
-          aria-hidden="true"
-        ></span>
-        Double · {{ formatPrice(ticketPriceCents * 2) }} for two people
-      </span>
+          <h3>{{ category.title }}</h3>
+        </div>
 
-      <span class="legend-item">
-        <span
-          class="legend-dot legend-dot--vip"
-          aria-hidden="true"
-        ></span>
-        VIP · {{ formatPrice(vipTicketPriceCents) }}
-      </span>
+        <p class="category-price">
+          {{ formatPrice(category.priceCents) }}
+          <span>{{ category.priceNote }}</span>
+        </p>
 
+        <p class="category-description">
+          {{ category.description }}
+        </p>
+      </article>
+    </section>
+
+    <div class="seat-legend" aria-label="Seat status">
       <span class="legend-item">
         <span
           class="legend-dot legend-dot--selected"
@@ -276,22 +303,16 @@ function clearSelection() {
 
     <hr />
 
-    <section
-      aria-label="Selected seats"
-      aria-live="polite"
-    >
+    <section aria-label="Selected seats" aria-live="polite">
       <h2>Your selection</h2>
 
       <ul v-if="selectedGroups.length">
-        <li
-          v-for="group in selectedGroups"
-          :key="group"
-        >
+        <li v-for="group in selectedGroups" :key="group">
           {{ group }}
         </li>
       </ul>
 
-      <p v-else>No seats selected yet.</p>
+      <p v-else>No seats selected.</p>
 
       <p>Tickets: {{ selectedSeats.length }}</p>
       <p>
@@ -398,7 +419,7 @@ function clearSelection() {
   gap: 10px;
 }
 
-/* Seats */
+/* Chairs */
 .seat {
   --chair-fill: #e2e8f0;
   --chair-edge: #64748b;
@@ -528,7 +549,49 @@ function clearSelection() {
   outline-offset: 4px;
 }
 
-/* Legend */
+/* Category descriptions */
+.seat-categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.category-card {
+  padding: 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+}
+
+.category-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.category-heading h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.category-price {
+  margin: 12px 0 8px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.category-price span {
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.category-description {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Seat status legend */
 .seat-legend {
   display: flex;
   flex-wrap: wrap;
