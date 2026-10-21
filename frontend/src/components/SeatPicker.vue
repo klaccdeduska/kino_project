@@ -1,23 +1,20 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { formatPrice, ticketPriceCents } from '../stores/booking'
+
+const props = defineProps<{ occupiedSeats: string[]; initialSeats?: string[] }>()
+const emit = defineEmits<{ checkout: [seats: string[]] }>()
 
 const rows = ['A', 'B', 'C', 'D', 'E']
 const seatsPerRow = 8
-const ticketPriceCents = 800
-
-const occupiedSeats = ['A-3', 'B-5', 'C-4']
-const selectedSeats = ref<string[]>([])
+const selectedSeats = ref<string[]>((props.initialSeats || []).filter(id => !props.occupiedSeats.includes(id)))
 
 const totalCents = computed(
   () => selectedSeats.value.length * ticketPriceCents,
 )
 
-function formatPrice(cents: number) {
-  return `${(cents / 100).toFixed(2)} €`
-}
-
 function isOccupied(seatId: string) {
-  return occupiedSeats.includes(seatId)
+  return props.occupiedSeats.includes(seatId)
 }
 
 function isSelected(seatId: string) {
@@ -88,6 +85,9 @@ function clearSelection() {
       @click="clearSelection"
     >
       Clear selection
+    </button>
+    <button type="button" :disabled="selectedSeats.length === 0" @click="emit('checkout', [...selectedSeats])">
+      Continue to payment
     </button>
   </section>
 </template>

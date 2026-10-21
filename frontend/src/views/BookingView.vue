@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import SeatPicker from '../components/SeatPicker.vue'
+import { bookingState, occupiedSeats, startCheckout } from '../stores/booking'
 
 interface Session {
   id: number
@@ -11,6 +12,20 @@ interface Session {
 }
 
 const route = useRoute()
+const router = useRouter()
+const movieTitle = ref('')
+const checkoutError = ref('')
+
+function checkout(seats: string[]) {
+  if (!session.value) return
+  try {
+    startCheckout({ movieId: session.value.movieId, movieTitle: movieTitle.value,
+      sessionId: session.value.id, date: session.value.date, time: session.value.time, seats })
+    void router.push({ name: 'payment' })
+  } catch {
+    checkoutError.value = 'Could not save your selection. Please allow browser storage and try again.'
+  }
+}
 
 const session = ref<Session | null>(null)
 const loading = ref(false)
@@ -21,6 +36,7 @@ async function loadSession() {
   const sessionId = route.query.sessionId
 
   session.value = null
+  checkoutError.value = ''
   error.value = ''
   loading.value = true
 
@@ -43,12 +59,16 @@ async function loadSession() {
     }
 
     const data: Session = await response.json()
+    const movieResponse = await fetch(`http://localhost:3000/api/movies/${encodeURIComponent(movieId)}`)
+    if (!movieResponse.ok) throw new Error('Could not load the movie.')
+    const movie: { title: string } = await movieResponse.json()
 
     if (
       String(route.params.movieId) === movieId &&
       route.query.sessionId === sessionId
     ) {
       session.value = data
+      movieTitle.value = movie.title
     }
   } catch (err) {
     if (
@@ -86,11 +106,15 @@ watch(
     <p v-else-if="error">{{ error }}</p>
 
     <template v-else-if="session">
-      <p>Movie ID: {{ session.movieId }}</p>
+      <p>{{ movieTitle }}</p>
       <p>Session: {{ session.date }} — {{ session.time }}</p>
-      <p>Demonstration hall. Your selection is not saved.</p>
+      <p>Demo booking. Purchases are saved in this browser only.</p>
 
-      <SeatPicker :key="`${session.movieId}-${session.id}`" />
+      <p v-if="checkoutError" role="alert">{{ checkoutError }}</p>
+      <SeatPicker :key="`${session.movieId}-${session.id}`"
+        :occupied-seats="occupiedSeats(session.id)"
+        :initial-seats="bookingState.draft?.sessionId === session.id ? bookingState.draft.seats : []"
+        @checkout="checkout" />
     </template>
   </main>
 </template>
