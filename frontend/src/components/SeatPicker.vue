@@ -34,6 +34,12 @@ const categoryLabels: Record<SeatCategory, string> = {
   vip: 'VIP',
 }
 
+function getGroupCount(row: HallRow) {
+  return row.category === 'double'
+    ? seatsPerRow / 2
+    : seatsPerRow
+}
+
 function getSeatGroup(row: HallRow, seat: number): string[] {
   if (row.category === 'double') {
     return [
@@ -54,10 +60,7 @@ function normalizeInitialSeats(): string[] {
   const result: string[] = []
 
   for (const row of rows) {
-    const groupCount =
-      row.category === 'double' ? seatsPerRow / 2 : seatsPerRow
-
-    for (let seat = 1; seat <= groupCount; seat++) {
+    for (let seat = 1; seat <= getGroupCount(row); seat++) {
       const group = getSeatGroup(row, seat)
 
       if (
@@ -78,29 +81,27 @@ const totalCents = computed(
   () => selectedSeats.value.length * ticketPriceCents,
 )
 
+function isGroupSelected(seatIds: string[]) {
+  return seatIds.every(id => selectedSeats.value.includes(id))
+}
+
 const selectedGroups = computed(() => {
   const result: string[] = []
 
   for (const row of rows) {
-    const groupCount =
-      row.category === 'double' ? seatsPerRow / 2 : seatsPerRow
-
-    for (let seat = 1; seat <= groupCount; seat++) {
+    for (let seat = 1; seat <= getGroupCount(row); seat++) {
       const group = getSeatGroup(row, seat)
 
       if (isGroupSelected(group)) {
-        const label = group.join(' + ')
-        result.push(`${label} (${categoryLabels[row.category]})`)
+        result.push(
+          `${group.join(' + ')} (${categoryLabels[row.category]})`,
+        )
       }
     }
   }
 
   return result
 })
-
-function isGroupSelected(seatIds: string[]) {
-  return seatIds.every(id => selectedSeats.value.includes(id))
-}
 
 function toggleGroup(seatIds: string[]) {
   if (isGroupOccupied(seatIds)) return
@@ -128,9 +129,17 @@ function seatDescription(row: HallRow, seat: number) {
   const group = getSeatGroup(row, seat)
   const price = formatPrice(group.length * ticketPriceCents)
 
-  return `Ряд ${row.id}, места ${seatLabel(row, seat)}, ${
+  const status = isGroupOccupied(group)
+    ? 'занято'
+    : isGroupSelected(group)
+      ? 'выбрано'
+      : 'свободно'
+
+  const placeLabel = row.category === 'double' ? 'места' : 'место'
+
+  return `Ряд ${row.id}, ${placeLabel} ${seatLabel(row, seat)}, ${
     categoryLabels[row.category]
-  }, ${price}`
+  }, ${price}, ${status}`
 }
 
 function clearSelection() {
@@ -139,74 +148,99 @@ function clearSelection() {
 </script>
 
 <template>
-  <section aria-label="Выбор мест">
+  <section class="seat-picker" aria-label="Выбор мест">
     <h2>Зал 1</h2>
     <p>Демонстрационные цены и доступность мест.</p>
 
-    <p>ЭКРАН</p>
+    <p class="screen-label">ЭКРАН</p>
     <hr />
 
-    <div
-      v-for="row in rows"
-      :key="row.id"
-      class="seat-row"
-    >
-      <span class="row-label">
-        Ряд {{ row.id }} · {{ categoryLabels[row.category] }}
-      </span>
-
-      <div class="row-seats">
-        <button
-          v-for="seat in (
-            row.category === 'double'
-              ? seatsPerRow / 2
-              : seatsPerRow
-          )"
-          :key="seat"
-          type="button"
-          class="seat"
-          :class="[
-            `seat--${row.category}`,
-            {
-              'seat--selected': isGroupSelected(
-                getSeatGroup(row, seat),
-              ),
-            },
-          ]"
-          :disabled="isGroupOccupied(getSeatGroup(row, seat))"
-          :aria-label="seatDescription(row, seat)"
-          :aria-pressed="isGroupSelected(getSeatGroup(row, seat))"
-          :title="seatDescription(row, seat)"
-          @click="toggleGroup(getSeatGroup(row, seat))"
+    <div class="seats-scroll">
+      <div class="seats-grid">
+        <div
+          v-for="row in rows"
+          :key="row.id"
+          class="seat-row"
         >
-          {{ seatLabel(row, seat) }}
-
-          <span
-            v-if="isGroupOccupied(getSeatGroup(row, seat))"
-            aria-hidden="true"
-          >
-            ×
+          <span class="row-label">
+            Ряд {{ row.id }} · {{ categoryLabels[row.category] }}
           </span>
 
-          <span
-            v-else-if="isGroupSelected(getSeatGroup(row, seat))"
-            aria-hidden="true"
-          >
-            ✓
-          </span>
-        </button>
+          <div class="row-seats">
+            <button
+              v-for="seat in getGroupCount(row)"
+              :key="seat"
+              type="button"
+              class="seat"
+              :class="[
+                `seat--${row.category}`,
+                {
+                  'seat--selected': isGroupSelected(
+                    getSeatGroup(row, seat),
+                  ),
+                },
+              ]"
+              :disabled="isGroupOccupied(getSeatGroup(row, seat))"
+              :aria-label="seatDescription(row, seat)"
+              :aria-pressed="isGroupSelected(getSeatGroup(row, seat))"
+              :title="seatDescription(row, seat)"
+              @click="toggleGroup(getSeatGroup(row, seat))"
+            >
+              <span class="seat-back" aria-hidden="true">
+                <span class="seat-number">
+                  {{ seatLabel(row, seat) }}
+                </span>
+
+                <span class="seat-status">
+                  <template
+                    v-if="isGroupOccupied(getSeatGroup(row, seat))"
+                  >
+                    ×
+                  </template>
+                  <template
+                    v-else-if="isGroupSelected(getSeatGroup(row, seat))"
+                  >
+                    ✓
+                  </template>
+                  <template v-else-if="row.category === 'vip'">
+                    ★
+                  </template>
+                </span>
+              </span>
+
+              <span class="seat-cushion" aria-hidden="true"></span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="seat-legend">
-      <span>Стандарт · {{ formatPrice(ticketPriceCents) }}</span>
-      <span>
+    <div class="seat-legend" aria-label="Категории и состояния мест">
+      <span class="legend-item">
+        <span class="legend-dot legend-dot--standard" aria-hidden="true"></span>
+        Стандарт · {{ formatPrice(ticketPriceCents) }}
+      </span>
+
+      <span class="legend-item">
+        <span class="legend-dot legend-dot--double" aria-hidden="true"></span>
         Двойное · {{ formatPrice(ticketPriceCents * 2) }} за двоих
       </span>
-      <span>VIP · {{ formatPrice(ticketPriceCents) }}</span>
-    </div>
 
-    <p>× — занято, ✓ — выбрано.</p>
+      <span class="legend-item">
+        <span class="legend-dot legend-dot--vip" aria-hidden="true"></span>
+        VIP · {{ formatPrice(ticketPriceCents) }}
+      </span>
+
+      <span class="legend-item">
+        <span class="legend-dot legend-dot--selected" aria-hidden="true">✓</span>
+        Выбрано
+      </span>
+
+      <span class="legend-item">
+        <span class="legend-dot legend-dot--occupied" aria-hidden="true">×</span>
+        Занято
+      </span>
+    </div>
 
     <hr />
 
@@ -233,85 +267,257 @@ function clearSelection() {
       </p>
     </section>
 
-    <button
-      type="button"
-      :disabled="selectedSeats.length === 0"
-      @click="clearSelection"
-    >
-      Очистить выбор
-    </button>
+    <div class="selection-actions">
+      <button
+        type="button"
+        :disabled="selectedSeats.length === 0"
+        @click="clearSelection"
+      >
+        Очистить выбор
+      </button>
 
-    <button
-      type="button"
-      :disabled="selectedSeats.length === 0"
-      @click="emit('checkout', [...selectedSeats])"
-    >
-      Перейти к оплате
-    </button>
+      <button
+        type="button"
+        :disabled="selectedSeats.length === 0"
+        @click="emit('checkout', [...selectedSeats])"
+      >
+        Перейти к оплате
+      </button>
+    </div>
   </section>
 </template>
 
 <style scoped>
+.screen-label {
+  text-align: center;
+  letter-spacing: 0.2em;
+}
+
+.seats-scroll {
+  overflow-x: auto;
+  padding: 12px 6px;
+}
+
+.seats-grid {
+  width: max-content;
+  margin-inline: auto;
+}
+
 .seat-row {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .row-label {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
+  font-size: 14px;
   font-weight: 600;
 }
 
 .row-seats {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 
 .seat {
-  min-width: 44px;
-  min-height: 40px;
-  padding: 8px;
-  border: 2px solid #64748b;
-  border-radius: 6px;
-  background: #f1f5f9;
-  color: #0f172a;
+  --chair-fill: #e2e8f0;
+  --chair-edge: #64748b;
+  --chair-text: #0f172a;
+
+  position: relative;
+  display: block;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 56px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--chair-text);
   cursor: pointer;
+  appearance: none;
+  transition: transform 150ms ease;
+}
+
+/* Подлокотники */
+.seat::before,
+.seat::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  top: 22px;
+  width: 7px;
+  height: 27px;
+  border: 2px solid var(--chair-edge);
+  border-radius: 5px;
+  background: var(--chair-fill);
+  box-sizing: border-box;
+}
+
+.seat::before {
+  left: 0;
+}
+
+.seat::after {
+  right: 0;
+}
+
+/* Спинка */
+.seat-back {
+  position: absolute;
+  inset: 2px 5px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  border: 2px solid var(--chair-edge);
+  border-radius: 10px 10px 5px 5px;
+  background: var(--chair-fill);
+  box-sizing: border-box;
+}
+
+/* Сиденье */
+.seat-cushion {
+  position: absolute;
+  z-index: 1;
+  right: 5px;
+  bottom: 3px;
+  left: 5px;
+  height: 15px;
+  border: 2px solid var(--chair-edge);
+  border-radius: 4px 4px 7px 7px;
+  background: var(--chair-fill);
+  box-shadow: 0 3px 0 var(--chair-edge);
+  box-sizing: border-box;
+}
+
+.seat-number {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.seat-status {
+  min-height: 12px;
+  font-size: 11px;
+  line-height: 12px;
 }
 
 .seat--double {
-  min-width: 96px;
-  border-color: #7c3aed;
-  background: #ede9fe;
+  --chair-fill: #ede9fe;
+  --chair-edge: #7c3aed;
+  --chair-text: #4c1d95;
+
+  flex-basis: 106px;
+  width: 106px;
+}
+
+/* Шов между двумя половинами двойного кресла */
+.seat--double .seat-cushion::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  border-left: 2px solid var(--chair-edge);
 }
 
 .seat--vip {
-  border-color: #a16207;
-  background: #fef3c7;
+  --chair-fill: #fef3c7;
+  --chair-edge: #a16207;
+  --chair-text: #713f12;
 }
 
 .seat--selected {
-  border-color: #15803d;
-  background: #15803d;
-  color: white;
+  --chair-fill: #15803d;
+  --chair-edge: #14532d;
+  --chair-text: #ffffff;
 }
 
 .seat:disabled {
-  border-color: #cbd5e1;
-  background: #e2e8f0;
-  color: #64748b;
+  --chair-fill: #e5e7eb;
+  --chair-edge: #9ca3af;
+  --chair-text: #4b5563;
+
   cursor: not-allowed;
+}
+
+.seat:not(:disabled):hover {
+  transform: translateY(-3px);
 }
 
 .seat:focus-visible {
   outline: 3px solid #2563eb;
-  outline-offset: 3px;
+  outline-offset: 4px;
 }
 
 .seat-legend {
   display: flex;
   flex-wrap: wrap;
+  gap: 12px 20px;
+  margin-block: 20px;
+  font-size: 14px;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid;
+  border-radius: 4px;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+.legend-dot--standard {
+  border-color: #64748b;
+  background: #e2e8f0;
+}
+
+.legend-dot--double {
+  border-color: #7c3aed;
+  background: #ede9fe;
+}
+
+.legend-dot--vip {
+  border-color: #a16207;
+  background: #fef3c7;
+}
+
+.legend-dot--selected {
+  border-color: #14532d;
+  background: #15803d;
+  color: white;
+}
+
+.legend-dot--occupied {
+  border-color: #9ca3af;
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+.selection-actions {
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
-  margin-top: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seat {
+    transition: none;
+  }
+
+  .seat:not(:disabled):hover {
+    transform: none;
+  }
 }
 </style>
