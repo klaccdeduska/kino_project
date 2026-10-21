@@ -3,6 +3,11 @@ import { ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import SeatPicker from '../components/SeatPicker.vue'
 import { bookingState, occupiedSeats, startCheckout } from '../stores/booking'
+import {
+  formatSessionDate,
+  getSessionEndTime,
+  endsNextDay,
+} from '../utils/session'
 
 interface Session {
   id: number
@@ -14,13 +19,16 @@ interface Session {
 const route = useRoute()
 const router = useRouter()
 const movieTitle = ref('')
+const movieDuration = ref(0)
 const checkoutError = ref('')
 
 function checkout(seats: string[]) {
   if (!session.value) return
   try {
-    startCheckout({ movieId: session.value.movieId, movieTitle: movieTitle.value,
-      sessionId: session.value.id, date: session.value.date, time: session.value.time, seats })
+    startCheckout({
+      movieId: session.value.movieId, movieTitle: movieTitle.value,
+      sessionId: session.value.id, date: session.value.date, time: session.value.time, seats
+    })
     void router.push({ name: 'payment' })
   } catch {
     checkoutError.value = 'Could not save your selection. Please allow browser storage and try again.'
@@ -61,7 +69,8 @@ async function loadSession() {
     const data: Session = await response.json()
     const movieResponse = await fetch(`http://localhost:3000/api/movies/${encodeURIComponent(movieId)}`)
     if (!movieResponse.ok) throw new Error('Could not load the movie.')
-    const movie: { title: string } = await movieResponse.json()
+    const movie: { title: string; duration: number } =
+      await movieResponse.json()
 
     if (
       String(route.params.movieId) === movieId &&
@@ -69,6 +78,7 @@ async function loadSession() {
     ) {
       session.value = data
       movieTitle.value = movie.title
+      movieDuration.value = movie.duration
     }
   } catch (err) {
     if (
@@ -107,12 +117,19 @@ watch(
 
     <template v-else-if="session">
       <p>{{ movieTitle }}</p>
-      <p>Session: {{ session.date }} — {{ session.time }}</p>
+      <p>
+        Session: {{ formatSessionDate(session.date) }} —
+        {{ session.time }}–{{ getSessionEndTime(session.time, movieDuration) }}
+        <small v-if="endsNextDay(session.time, movieDuration)">
+          (next day)
+        </small>
+      </p>
+
+      <p>Movie duration: {{ movieDuration }} min</p>
       <p>Demo booking. Purchases are saved in this browser only.</p>
 
       <p v-if="checkoutError" role="alert">{{ checkoutError }}</p>
-      <SeatPicker :key="`${session.movieId}-${session.id}`"
-        :occupied-seats="occupiedSeats(session.id)"
+      <SeatPicker :key="`${session.movieId}-${session.id}`" :occupied-seats="occupiedSeats(session.id)"
         :initial-seats="bookingState.draft?.sessionId === session.id ? bookingState.draft.seats : []"
         @checkout="checkout" />
     </template>

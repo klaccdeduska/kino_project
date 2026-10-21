@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import {
+  formatSessionDate,
+  getSessionEndTime,
+  endsNextDay,
+} from '../utils/session'
 
 interface Movie {
   id: number
@@ -32,6 +37,12 @@ const sessionsLoading = ref(false)
 const sessionsError = ref('')
 const selectedDate = ref('')
 
+const availableDates = computed(() => {
+  const dates = sessions.value.map((session) => session.date)
+
+  return [...new Set(dates)].sort()
+})
+
 const filteredSessions = computed(() => {
   if (selectedDate.value === '') {
     return sessions.value
@@ -41,28 +52,6 @@ const filteredSessions = computed(() => {
     (session) => session.date === selectedDate.value
   )
 })
-
-function formatSessionDate(date: string) {
-  const [year, month, day] = date.split('-')
-
-  return `${day}.${month}.${year}`
-}
-
-function getSessionEndTime(time: string, duration: number) {
-  const [hours = 0, minutes = 0] = time.split(':').map(Number)
-
-  const endMinutes = hours * 60 + minutes + duration
-  const endHours = Math.floor(endMinutes / 60) % 24
-  const remainingMinutes = endMinutes % 60
-
-  return `${String(endHours).padStart(2, '0')}:${String(remainingMinutes).padStart(2, '0')}`
-}
-
-function endsNextDay(time: string, duration: number) {
-  const [hours = 0, minutes = 0] = time.split(':').map(Number)
-
-  return hours * 60 + minutes + duration >= 24 * 60
-}
 
 async function toggleSessions(movieId: number) {
   if (sessionsMovieId.value === movieId) {
@@ -187,6 +176,14 @@ onMounted(loadMovies)
         <div v-if="sessionsMovieId === movie.id">
           <h3>Available sessions</h3>
 
+          <div class="session-dates" role="group" aria-label="Session dates">
+            <button v-for="date in availableDates" :key="date" type="button"
+              :class="{ 'date-button--selected': selectedDate === date }" :aria-pressed="selectedDate === date"
+              @click="selectedDate = date">
+              {{ formatSessionDate(date) }}
+            </button>
+          </div>
+
           <label>
             Date:
             <input v-model="selectedDate" type="date" />
@@ -234,3 +231,17 @@ onMounted(loadMovies)
     </template>
   </main>
 </template>
+
+<style scoped>
+.session-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.date-button--selected {
+  background-color: #222;
+  color: #fff;
+}
+</style>
