@@ -34,6 +34,15 @@ New endpoints: `GET /api/movies/:id/sessions` (list) and `GET /api/movies/:id/se
 
 ### Prisma ORM practice
 
+**Open Prisma Studio (after initial setup):** Start Docker Desktop and the MariaDB container. From the project root, run:
+
+```powershell
+cd backend
+npm.cmd run prisma:studio
+```
+
+If your terminal is already in `backend`, run only `npm.cmd run prisma:studio`. Open the local URL printed in the terminal; the port may vary. Keep the terminal running while using Studio. To stop it, press `Ctrl+C` and confirm `Y` if prompted. Changes saved to MariaDB remain after Studio closes; save any pending edits first.
+
 Prisma ORM 7 is installed in `backend` for learning alongside the existing mysql2 API. Start with the [beginner Prisma guide](backend/README.md#english): Movie and Review models, one-to-many relations, safe existing-database baselining, and query examples. The API continues to use its existing SQL queries.
 
 Run from `backend` after configuring `.env` and following the guide's first-time baseline instructions:
@@ -229,6 +238,15 @@ Uued aadressid: `GET /api/movies/:id/sessions` (loend) ja `GET /api/movies/:id/s
 
 ### Prisma ORM-i harjutamine
 
+**Prisma Studio avamine (pärast esmast seadistamist):** Käivita Docker Desktop ja MariaDB konteiner. Projekti juurkaustas käivita:
+
+```powershell
+cd backend
+npm.cmd run prisma:studio
+```
+
+Kui terminal on juba kaustas `backend`, käivita ainult `npm.cmd run prisma:studio`. Ava terminalis kuvatud kohalik aadress; port võib muutuda. Hoia terminal Studio kasutamise ajal töös. Sulgemiseks vajuta `Ctrl+C` ja vajaduse korral kinnita valikuga `Y`. MariaDB-sse salvestatud muudatused säilivad ka pärast Studio sulgemist; salvesta pooleliolevad muudatused enne sulgemist.
+
 Prisma ORM 7 on paigaldatud kausta `backend` õppimiseks olemasoleva mysql2 API kõrvale. Alusta [eestikeelsest Prisma juhendist](backend/README.md#eesti): mudelid Movie ja Review, üks-mitmele seosed, olemasoleva andmebaasi ohutu algmigratsiooni registreerimine ning päringunäited. API kasutab endiselt olemasolevaid SQL-päringuid.
 
 Käivita kaustas `backend` pärast `.env` seadistamist ja juhendi esmakordse algmigratsiooni juhiste järgimist:
@@ -413,6 +431,15 @@ exit;
 Новые адреса: `GET /api/movies/:id/sessions` (список) и `GET /api/movies/:id/sessions/:sessionId` (один сеанс; 404, если отсутствует или принадлежит другому фильму).
 
 ### Практика Prisma ORM
+
+**Как открыть Prisma Studio (после первоначальной настройки):** Запусти Docker Desktop и контейнер MariaDB. Из корня проекта выполни:
+
+```powershell
+cd backend
+npm.cmd run prisma:studio
+```
+
+Если терминал уже находится в `backend`, выполни только `npm.cmd run prisma:studio`. Открой локальный адрес из терминала; порт может меняться. Оставь терминал работающим, пока используешь Studio. Для остановки нажми `Ctrl+C` и подтверди `Y`, если появится вопрос. Сохранённые в MariaDB изменения останутся после закрытия Studio; перед выходом сохрани незавершённые правки.
 
 Prisma ORM 7 установлен в `backend` для обучения рядом с существующим API на mysql2. Начни с [руководства Prisma на русском](backend/README.md#русский): модели Movie и Review, связи один ко многим, безопасная регистрация исходной миграции существующей базы и примеры запросов. API продолжает использовать существующие SQL-запросы.
 
