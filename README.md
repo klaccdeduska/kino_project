@@ -1,607 +1,576 @@
 # BOOBLICKI — Cinema Project
 
-Languages / Keeled / Языки: [English](#english) · [Eesti](#eesti) · [Русский](#русский)
+[English](#english) · [Eesti](#eesti) · [Русский](#русский)
 
 ## English
 
-### Update: movie sessions
+Educational cinema website: movies, sessions, seat selection, registration, and demo ticket purchases.
 
-Added MariaDB sessions linked to movies, `Show sessions` with loading/error/empty states, and `Choose seats` for each session. The booking page loads the selected session from the API and checks that it belongs to the movie. Seats remain demonstration data.
+**Stack:** Vue 3 · TypeScript · NestJS · MariaDB · Docker.
 
-**Team setup:** Pull the latest changes (`git pull`). Each teammate has a separate local database: Compose imports only `movies.sql`, not `database/sessions.sql`. Restarting Docker does not import sessions into an existing volume. From the project root, with Docker Desktop running:
+Commands use **Windows PowerShell**. On macOS/Linux, use `npm` / `npx` instead of `npm.cmd` / `npx.cmd`.
 
-```powershell
-docker compose -f docker-compose.movies.yml up -d
-docker compose -f docker-compose.movies.yml cp database/sessions.sql db:/tmp/sessions.sql
-docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
-```
+### 1. Installation and first run
 
-Enter the database user's password configured for your local database (`MARIADB_PASSWORD` in Compose for a fresh setup). In the MariaDB shell:
+Install **Node.js 24.12+**, **Git**, and **Docker Desktop**. For development: VS Code + Vue (Official) extension.
 
-```sql
-SHOW TABLES LIKE 'sessions';
--- If the table exists, check its contents before importing:
--- SELECT COUNT(*) FROM sessions;
--- Only import if the table is missing or empty:
-SOURCE /tmp/sessions.sql;
-SELECT movie_id, COUNT(*) FROM sessions GROUP BY movie_id;
-exit;
-```
-
-Run `SOURCE` only once on an empty sessions table: repeating it duplicates the sessions. Movies 1–12 must already exist (initial setup uses `database/movies.sql`). Do not delete the Docker volume. Restart the backend from `backend` with `npm.cmd run start:dev` and start the frontend as described below. Check `http://localhost:3000/api/movies/1/sessions`: it should return two sessions; movie 6 intentionally returns `[]`. A `Cannot GET` 404 means the new route is not running; check the updated code and restart the backend. For connection errors, check `backend/.env` against your local database credentials.
-
-New endpoints: `GET /api/movies/:id/sessions` (list) and `GET /api/movies/:id/sessions/:sessionId` (one session; 404 if missing or linked to another movie).
-
-### Prisma ORM practice
-
-**Open Prisma Studio (after initial setup):** Start Docker Desktop and the MariaDB container. From the project root, run:
+Clone the project and install dependencies:
 
 ```powershell
-cd backend
-npm.cmd run prisma:studio
-```
-
-If your terminal is already in `backend`, run only `npm.cmd run prisma:studio`. Open the local URL printed in the terminal; the port may vary. Keep the terminal running while using Studio. To stop it, press `Ctrl+C` and confirm `Y` if prompted. Changes saved to MariaDB remain after Studio closes; save any pending edits first.
-
-Prisma ORM 7 is installed in `backend` for learning alongside the existing mysql2 API. Start with the [beginner Prisma guide](backend/README.md#english): Movie and Review models, one-to-many relations, safe existing-database baselining, and query examples. The API continues to use its existing SQL queries.
-
-Run from `backend` after configuring `.env` and following the guide's first-time baseline instructions:
-
-```powershell
-npm.cmd run prisma:validate
-npm.cmd run prisma:deploy
-npm.cmd run prisma:generate
-npm.cmd run prisma:seed
-npm.cmd run prisma:status
-```
-
-For your own schema changes: `npm.cmd run prisma:migrate -- --name describe_change`, then `npm.cmd run prisma:generate`. Development migrations require a separate shadow database; setup is in the guide. The seed inserts missing movies 1-3 from `database/movies.sql` and preserves existing rows.
-
-
-BOOBLICKI is an educational cinema website. Movies are stored in our own MariaDB database and delivered to the Vue frontend through our own NestJS REST API. The project no longer uses the external Apollo Kino API.
-
-### Current features
-
-- Display 12 movies loaded from MariaDB through the backend API.
-- Search movies by title.
-- View movie information: title, genre, duration, description, release year, director, and age rating.
-- Navigate from a movie listing to a separate seat selection page.
-- Demonstration seating layout: 5 rows × 8 seats, including unavailable seats.
-- Select and deselect available seats, see selected seats, and clear the selection.
-
-**Limitations:** Seats and their availability are currently demonstration data, not persisted reservations. Seat selection resets when the page is refreshed or a different movie is selected. Payment and completed bookings have not been implemented. Movie poster and trailer fields are available in the API but currently contain `null` in the initial dataset.
-
-### Tech stack
-
-- **Frontend:** Vue 3, TypeScript, Vite, Vue Router.
-- **Backend:** NestJS, TypeScript, `mysql2`, `dotenv`.
-- **Database:** MariaDB 11, Docker Compose, persistent named volume.
-- **Development:** VS Code, Git, GitHub, Docker Desktop.
-
-### Project structure
-
-```text
-kino_project/
-├── backend/
-│   ├── src/
-│   │   ├── main.ts                 # NestJS startup and CORS
-│   │   └── movies/
-│   │       ├── movies.controller.ts # Own REST API
-│   │       └── movies.database.ts   # MariaDB connection pool
-│   ├── .env                       # Local credentials; do not commit
-│   └── package.json
-├── frontend/
-│   └── src/
-│       ├── views/
-│       │   ├── MoviesView.vue      # Movie list and search
-│       │   └── BookingView.vue     # Separate seat selection page
-│       └── components/
-│           └── SeatPicker.vue      # Seat selector
-├── database/
-│   └── movies.sql                 # Initial database data
-├── docker-compose.movies.yml     # MariaDB container
-└── README.md
-```
-
-### Requirements and first-time setup
-
-Install Node.js (version 24 used during development), Git and Docker Desktop with Docker Compose. Clone the repository:
-
-```bash
 git clone https://github.com/klaccdeduska/kino_project.git
 cd kino_project
+npm.cmd ci --prefix backend
+npm.cmd ci --prefix frontend
 ```
 
-Start Docker Desktop. From the **project root**, start MariaDB:
+Start Docker Desktop, then run from the project root:
 
 ```powershell
 docker compose -f docker-compose.movies.yml up -d
-docker compose -f docker-compose.movies.yml ps
 ```
 
-The database runs on `localhost:3308` (container port `3306`); database name: `kino`. On a **new, empty Docker data volume**, the SQL initialization file creates the initial movie records. If the volume already exists, restarting the container does not re-import the SQL file or overwrite existing data. Do not run `down -v` unless you intentionally want to delete database data.
+On a new empty Docker volume, this creates the `kino` database with 12 movies. Wait until MariaDB is ready before importing SQL.
 
-Create `backend/.env` locally using the MariaDB credentials configured in `docker-compose.movies.yml`:
+Create `backend/.env`:
 
 ```dotenv
 DB_HOST=127.0.0.1
 DB_PORT=3308
 DB_USER=kino_user
-DB_PASSWORD=YOUR_MARIADB_PASSWORD
+DB_PASSWORD=YOUR_PASSWORD
 DB_NAME=kino
+DATABASE_URL="mysql://kino_user:YOUR_PASSWORD@127.0.0.1:3308/kino"
 ```
 
-The user and password must match the Compose configuration. `backend/.env` must be excluded from Git and never committed; only include placeholders in documentation. When using an existing volume, changing environment variables in Compose will not automatically change the database users' passwords.
+Replace `YOUR_PASSWORD` with `MARIADB_PASSWORD` from Compose, or the current password of an existing database. URL-encode special characters in the URL: for example, `@` → `%40`. **Do not commit `.env`.**
 
-Install dependencies **once on a new computer**, or again when `package.json` / lockfiles change:
+Add sessions and the users table from the project root:
 
 ```powershell
-cd backend
-npm.cmd install
-cd ..\frontend
-npm.cmd install
-cd ..
+docker compose -f docker-compose.movies.yml cp database/sessions.sql db:/tmp/sessions.sql
+docker compose -f docker-compose.movies.yml cp database/users.sql db:/tmp/users.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
 ```
 
-### Start the project (Windows PowerShell, every time)
+Enter the password, then run in MariaDB:
 
-Open three terminals in VS Code. Run the following from `kino_project`:
+```sql
+SOURCE /tmp/sessions.sql;
+SOURCE /tmp/users.sql;
+exit;
+```
 
-**1. Database — terminal 1:**
+**Import sessions once, only when the table is missing or empty:** importing again creates duplicates. Continue with the next section.
+
+### 2. Daily startup
+
+Start Docker Desktop. Run these commands **from the project root**, using separate terminals for backend and frontend:
 
 ```powershell
+# Database
 docker compose -f docker-compose.movies.yml up -d
 ```
 
-**2. Backend — terminal 2:**
+```powershell
+# Backend
+npm.cmd --prefix backend run start:dev
+```
+
+```powershell
+# Frontend
+npm.cmd --prefix frontend run dev
+```
+
+- **Website:** http://localhost:5173
+- **API:** http://localhost:3000/api/movies
+
+Keep backend and frontend running. Stop them with `Ctrl+C`. Stop the database while keeping its data:
+
+```powershell
+docker compose -f docker-compose.movies.yml stop
+```
+
+### 3. Updating the project
+
+Save local changes with a commit or `git stash`, then run from the root:
+
+```powershell
+git pull
+```
+
+If dependencies changed:
+
+```powershell
+npm.cmd ci --prefix backend
+npm.cmd ci --prefix frontend
+```
+
+If new Prisma migrations were added and Prisma is already configured, with the database running:
 
 ```powershell
 cd backend
-npm.cmd run start:dev
+npm.cmd run prisma:deploy
+npm.cmd run prisma:generate
+cd ..
 ```
 
-API: `http://localhost:3000/api/movies`
+Apply new SQL scripts separately according to the change instructions. Restart backend and frontend afterwards.
 
-**3. Frontend — terminal 3 (from the project root):**
+**Neither `git pull` nor restarting Docker updates the database automatically.**
+
+### 4. Working with the database
+
+Open the SQL console from the root:
 
 ```powershell
-cd frontend
-npm.cmd run dev
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
 ```
-
-Open the Vite `Local` URL, typically `http://localhost:5173`. Keep the backend and frontend terminals running. On macOS/Linux or where PowerShell permits npm scripts, `npm` can be used instead of `npm.cmd`.
-
-### API endpoints
-
-| Method | Endpoint | Result |
-| --- | --- | --- |
-| `GET` | `/api/movies` | All movies from MariaDB |
-| `GET` | `/api/movies/:id` | One movie by ID (404 if not found) |
-
-Movie data includes `id`, `title`, `genre`, `duration` (minutes), `description`, `releaseYear`, `director`, `ageRating`, `poster` and `trailer`. For local development, CORS is enabled for `http://localhost:5173` in `backend/src/main.ts`.
-
-### Checks and troubleshooting
-
-```powershell
-# From the project root: check the database container
-docker compose -f docker-compose.movies.yml ps
-
-# Open a MariaDB shell (uses the root password from Compose)
-docker compose -f docker-compose.movies.yml exec db mariadb -u root -p
-```
-
-Inside MariaDB:
 
 ```sql
-USE kino;
-SELECT COUNT(*) FROM movies;
-SELECT id, title, duration FROM movies;
+SHOW TABLES;
+SELECT id, title FROM movies;
+SELECT * FROM sessions;
+SELECT id, email FROM users;
+exit;
 ```
 
-The initial dataset contains **12 movies**. If the frontend cannot load them, first check the API URL in your browser, then make sure the backend is running, `.env` matches MariaDB, and Vite is running on the expected CORS origin. If Vite selects another port, update the backend's CORS origin accordingly.
+#### Prisma
 
-### Planned improvements
+Run commands from `backend`. Initial setup, baselining an existing database, and shadow database configuration are covered in [backend/README.md](backend/README.md#english).
 
-Movie posters, showtimes, cinemas/halls, persistent seat availability, registration/login, real booking and payment, movie management, and server-side booking validation.
+| Command | Purpose |
+|---|---|
+| `npm.cmd run prisma:studio` | Open the data editor |
+| `npm.cmd run prisma:status` | Check migrations |
+| `npm.cmd run prisma:deploy` | Apply existing migrations |
+| `npm.cmd run prisma:generate` | Regenerate Prisma Client |
+| `npm.cmd run prisma:migrate -- --name describe_change` | Create a migration after changing the schema; requires a shadow database |
+| `npm.cmd run prisma:seed` | Insert missing practice movies 1–3 |
+
+Studio shows Prisma models: currently movies and reviews. Access sessions and users through SQL. Open the URL printed in the terminal; stop Studio with `Ctrl+C`. Saved edits change database records.
+
+To apply an SQL file, copy it into the container and open the console. For example, update posters:
+
+```powershell
+docker compose -f docker-compose.movies.yml cp database/update_posters.sql db:/tmp/update_posters.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
+```
+
+Then in MariaDB:
+
+```sql
+SOURCE /tmp/update_posters.sql;
+exit;
+```
+
+**Data persists in the Docker volume. `docker compose -f docker-compose.movies.yml down -v` and `prisma migrate reset` delete it.** Changing the password in Compose does not change an existing database password.
+
+### 5. Checks and common errors
+
+From the project root:
+
+```powershell
+# Build
+npm.cmd --prefix backend run build
+npm.cmd --prefix frontend run build
+
+# Tests
+npm.cmd --prefix backend test -- --runInBand
+npm.cmd --prefix frontend run test:unit -- --run
+
+# Database status and logs
+docker compose -f docker-compose.movies.yml ps
+docker compose -f docker-compose.movies.yml logs --tail 100 db
+```
+
+| Problem | Check |
+|---|---|
+| Database unavailable | Docker Desktop, container, port `3308` |
+| `Access denied` | Password and settings in `backend/.env` |
+| Missing sessions / users table | Import `sessions.sql` / `users.sql` |
+| API unavailable | Backend process and terminal errors |
+| API works, website cannot load data | Frontend port: CORS allows `5173` |
+| Prisma: table already exists | Initial migration setup in `backend/README.md` |
 
 ---
 
 ## Eesti
 
-### Uuendus: filmiseansid
+Õppeprojektina loodud kino veebileht: filmid, seansid, istekohtade valik, registreerimine ja näitlik piletiost.
 
-Lisasime filmidega seotud seansid MariaDB-sse, nupu `Show sessions` koos laadimise, vea ja tühja loendi teadetega ning iga seansi juurde lingi `Choose seats`. Kohtade valimise leht laadib seansi API kaudu ja kontrollib selle seost filmiga. Istekohad on endiselt näidisandmed.
+**Tehnoloogiad:** Vue 3 · TypeScript · NestJS · MariaDB · Docker.
 
-**Juhend meeskonnale:** Laadi uusim kood (`git pull`). Igal arendajal on oma kohalik andmebaas. Compose impordib ainult `movies.sql`, mitte faili `database/sessions.sql`; konteineri taaskäivitamine olemasolevat andmebaasi ei uuenda. Käivita Docker Desktop ja projekti juurkaustas:
+Käsud on mõeldud **Windows PowerShellile**. macOS-is/Linuxis kasuta `npm` / `npx` käskude `npm.cmd` / `npx.cmd` asemel.
 
-```powershell
-docker compose -f docker-compose.movies.yml up -d
-docker compose -f docker-compose.movies.yml cp database/sessions.sql db:/tmp/sessions.sql
-docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
-```
+### 1. Paigaldamine ja esimene käivitus
 
-Sisesta kohaliku andmebaasi kasutaja parool (uue seadistuse puhul Compose'i `MARIADB_PASSWORD`). MariaDB konsoolis:
+Paigalda **Node.js 24.12+**, **Git** ja **Docker Desktop**. Arendamiseks: VS Code + laiendus Vue (Official).
 
-```sql
-SHOW TABLES LIKE 'sessions';
--- Kui tabel on olemas, kontrolli enne importimist:
--- SELECT COUNT(*) FROM sessions;
--- Impordi ainult siis, kui tabel puudub või on tühi:
-SOURCE /tmp/sessions.sql;
-SELECT movie_id, COUNT(*) FROM sessions GROUP BY movie_id;
-exit;
-```
-
-Käivita `SOURCE` ainult üks kord tühja seansitabeli jaoks: korduv import lisab duplikaadid. Filmid 1–12 peavad juba olemas olema (algseadistus kasutab faili `database/movies.sql`). Ära kustuta Docker volume'it. Taaskäivita backend kaustas `backend` käsuga `npm.cmd run start:dev` ja käivita frontend alloleva juhendi järgi. Aadress `http://localhost:3000/api/movies/1/sessions` peab tagastama kaks seanssi; filmil 6 puuduvad seansid tahtlikult (`[]`). `Cannot GET` koos 404-ga tähendab, et uus marsruut pole käivitatud: kontrolli koodi uuendamist ja taaskäivita backend. Ühendusvea korral kontrolli faili `backend/.env` ühendusandmeid.
-
-Uued aadressid: `GET /api/movies/:id/sessions` (loend) ja `GET /api/movies/:id/sessions/:sessionId` (üks seanss; 404, kui seanss puudub või kuulub teisele filmile).
-
-### Prisma ORM-i harjutamine
-
-**Prisma Studio avamine (pärast esmast seadistamist):** Käivita Docker Desktop ja MariaDB konteiner. Projekti juurkaustas käivita:
-
-```powershell
-cd backend
-npm.cmd run prisma:studio
-```
-
-Kui terminal on juba kaustas `backend`, käivita ainult `npm.cmd run prisma:studio`. Ava terminalis kuvatud kohalik aadress; port võib muutuda. Hoia terminal Studio kasutamise ajal töös. Sulgemiseks vajuta `Ctrl+C` ja vajaduse korral kinnita valikuga `Y`. MariaDB-sse salvestatud muudatused säilivad ka pärast Studio sulgemist; salvesta pooleliolevad muudatused enne sulgemist.
-
-Prisma ORM 7 on paigaldatud kausta `backend` õppimiseks olemasoleva mysql2 API kõrvale. Alusta [eestikeelsest Prisma juhendist](backend/README.md#eesti): mudelid Movie ja Review, üks-mitmele seosed, olemasoleva andmebaasi ohutu algmigratsiooni registreerimine ning päringunäited. API kasutab endiselt olemasolevaid SQL-päringuid.
-
-Käivita kaustas `backend` pärast `.env` seadistamist ja juhendi esmakordse algmigratsiooni juhiste järgimist:
-
-```powershell
-npm.cmd run prisma:validate
-npm.cmd run prisma:deploy
-npm.cmd run prisma:generate
-npm.cmd run prisma:seed
-npm.cmd run prisma:status
-```
-
-Oma skeemimuudatusteks kasuta `npm.cmd run prisma:migrate -- --name describe_change` ja seejärel `npm.cmd run prisma:generate`. Arendusmigratsioonid vajavad eraldi variandmebaasi; seadistamine on juhendis. Seed lisab failist `database/movies.sql` puuduvad filmid 1–3 ning säilitab olemasolevad kirjed.
-
-BOOBLICKI on õppeprojektina loodud kino veebileht. Filmide andmed asuvad meie enda MariaDB andmebaasis ning Vue kasutajaliides saab need meie NestJS REST API kaudu. Apollo Kino välist API-t enam ei kasutata.
-
-### Praegused võimalused
-
-- 12 filmi kuvamine oma andmebaasist.
-- Filmide otsimine pealkirja järgi.
-- Filmi kirjeldus, žanr, kestus, väljalaskeaasta, režissöör ja vanusepiirang.
-- Filmide nimekirjast liikumine eraldi istekohtade valimise lehele.
-- Näitlik saaliplaan: 5 rida × 8 kohta, sealhulgas hõivatud kohad.
-- Vabade kohtade valimine ja valiku tühistamine, valitud kohtade kuvamine ning kogu valiku puhastamine.
-
-**Piirangud:** Kohtade valik ei ole veel päris broneering ega salvestu andmebaasi; lehe värskendamisel või filmi vahetamisel valik lähtestatakse. Maksmine ja broneeringu lõplik vormistamine ei ole teostatud. Esialgsetel filmidel pole veel plakateid ja treilereid (`null`).
-
-### Tehnoloogiad
-
-- **Frontend:** Vue 3, TypeScript, Vite, Vue Router.
-- **Backend:** NestJS, TypeScript, `mysql2`, `dotenv`.
-- **Andmebaas:** MariaDB 11, Docker Compose, püsiv nimeline andmemaht.
-- **Arendus:** VS Code, Git, GitHub, Docker Desktop.
-
-### Projekti struktuur
-
-```text
-kino_project/
-├── backend/
-│   ├── src/
-│   │   ├── main.ts                 # NestJS-i käivitus ja CORS
-│   │   └── movies/
-│   │       ├── movies.controller.ts # Meie REST API
-│   │       └── movies.database.ts   # MariaDB ühenduste kogum
-│   ├── .env                       # Kohalikud ühendusandmed; ära lisa Giti
-│   └── package.json
-├── frontend/
-│   └── src/
-│       ├── views/
-│       │   ├── MoviesView.vue      # Filmide nimekiri ja otsing
-│       │   └── BookingView.vue     # Eraldi istekohtade valimise leht
-│       └── components/
-│           └── SeatPicker.vue      # Istekohtade valik
-├── database/
-│   └── movies.sql                 # Andmebaasi algandmed
-├── docker-compose.movies.yml     # MariaDB konteiner
-└── README.md
-```
-
-### Esmakordne ettevalmistus
-
-Vaja on Node.js-i (arenduses kasutati versiooni 24), Giti ja Docker Desktopi koos Docker Compose’iga. Käivita Docker Desktop.
+Laadi projekt alla ja paigalda sõltuvused:
 
 ```powershell
 git clone https://github.com/klaccdeduska/kino_project.git
 cd kino_project
+npm.cmd ci --prefix backend
+npm.cmd ci --prefix frontend
+```
+
+Käivita Docker Desktop, seejärel projekti juurkaustas:
+
+```powershell
 docker compose -f docker-compose.movies.yml up -d
 ```
 
-Loo lokaalne fail `backend/.env`, kasutades `docker-compose.movies.yml` failis määratud kasutajat ja parooli:
+Uuele tühjale Docker volume'ile luuakse automaatselt andmebaas `kino` koos 12 filmiga. Enne SQL-i importimist oota, kuni MariaDB on valmis.
+
+Loo `backend/.env`:
 
 ```dotenv
 DB_HOST=127.0.0.1
 DB_PORT=3308
 DB_USER=kino_user
-DB_PASSWORD=YOUR_MARIADB_PASSWORD
+DB_PASSWORD=YOUR_PASSWORD
 DB_NAME=kino
+DATABASE_URL="mysql://kino_user:YOUR_PASSWORD@127.0.0.1:3308/kino"
 ```
 
-Ära lisa `.env` faili GitHubi. Andmebaasi algandmed imporditakse automaatselt ainult siis, kui Docker loob esimest korda tühja andmemahu. Olemasoleva andmemahu taaskäivitamine ei impordi SQL-faili uuesti ega kirjuta andmeid üle. Ära kasuta `down -v`, kui sa ei soovi andmebaasi andmeid kustutada. Andmebaas `kino` töötab aadressil `localhost:3308` (konteineri port `3306`). Kasutaja ja parool peavad vastama Compose’i seadistusele; olemasoleva andmemahu korral ei muuda Compose’i muutujate muutmine andmebaasi kasutajate paroole automaatselt. Dokumentatsioonis kasuta ainult näidisparoole.
+Asenda `YOUR_PASSWORD` Compose'i väärtusega `MARIADB_PASSWORD` või olemasoleva andmebaasi kehtiva parooliga. URL-is kodeeri erimärgid: näiteks `@` → `%40`. **Ära lisa `.env` faili Giti.**
 
-Paigalda sõltuvused uues arvutis (või pärast sõltuvuste muudatusi):
+Lisa seansid ja kasutajate tabel projekti juurkaustast:
 
 ```powershell
-cd backend
-npm.cmd install
-cd ..\frontend
-npm.cmd install
-cd ..
+docker compose -f docker-compose.movies.yml cp database/sessions.sql db:/tmp/sessions.sql
+docker compose -f docker-compose.movies.yml cp database/users.sql db:/tmp/users.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
 ```
 
-### Projekti käivitamine (kolm terminali)
+Sisesta parool, seejärel MariaDB-s:
 
-Käivita Docker Desktop. Iga käskude plokk algab projekti juurkaustast.
+```sql
+SOURCE /tmp/sessions.sql;
+SOURCE /tmp/users.sql;
+exit;
+```
 
-**1. Andmebaas:**
+**Impordi seansid üks kord, ainult puuduva või tühja tabeli korral:** korduv import lisab duplikaate. Jätka järgmise jaotisega.
+
+### 2. Igapäevane käivitamine
+
+Käivita Docker Desktop. Käivita käsud **projekti juurkaustast**, backend ja frontend eraldi terminalides:
 
 ```powershell
+# Andmebaas
 docker compose -f docker-compose.movies.yml up -d
 ```
 
-**2. Backend:**
+```powershell
+# Backend
+npm.cmd --prefix backend run start:dev
+```
+
+```powershell
+# Frontend
+npm.cmd --prefix frontend run dev
+```
+
+- **Veebileht:** http://localhost:5173
+- **API:** http://localhost:3000/api/movies
+
+Hoia backend ja frontend töös. Peatamiseks vajuta `Ctrl+C`. Andmebaasi peatamine andmeid säilitades:
+
+```powershell
+docker compose -f docker-compose.movies.yml stop
+```
+
+### 3. Projekti uuendamine
+
+Salvesta oma muudatused commit'iga või käsuga `git stash`, seejärel juurkaustas:
+
+```powershell
+git pull
+```
+
+Kui sõltuvused muutusid:
+
+```powershell
+npm.cmd ci --prefix backend
+npm.cmd ci --prefix frontend
+```
+
+Kui lisati Prisma migratsioone ja Prisma on juba seadistatud, käivita töötava andmebaasiga:
 
 ```powershell
 cd backend
-npm.cmd run start:dev
+npm.cmd run prisma:deploy
+npm.cmd run prisma:generate
+cd ..
 ```
 
-**3. Frontend:**
+Rakenda uued SQL-skriptid eraldi muudatuse juhiste järgi. Seejärel taaskäivita backend ja frontend.
+
+**`git pull` ega Dockeri taaskäivitamine ei uuenda andmebaasi automaatselt.**
+
+### 4. Töö andmebaasiga
+
+Ava SQL-konsool juurkaustast:
 
 ```powershell
-cd frontend
-npm.cmd run dev
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
 ```
-
-Hoia backendi ja frontendi terminalid töös. macOS-is/Linuxis või sobiva PowerShelli seadistuse korral võib kasutada `npm` käsku `npm.cmd` asemel.
-
-Veebileht: `http://localhost:5173` (või Vite terminalis kuvatud aadress). API: `http://localhost:3000/api/movies`; üksik film: `http://localhost:3000/api/movies/1`.
-
-### API otspunktid
-
-| Meetod | Otspunkt | Tulemus |
-| --- | --- | --- |
-| `GET` | `/api/movies` | Kõik filmid MariaDB-st |
-| `GET` | `/api/movies/:id` | Üks film ID järgi; puudumisel 404 |
-
-Filmi andmed sisaldavad `id`, `title`, `genre`, `duration` (minutites), `description`, `releaseYear`, `director`, `ageRating`, `poster` ja `trailer`. Kohalikus arenduses on failis `backend/src/main.ts` CORS lubatud aadressile `http://localhost:5173`.
-
-### Kontroll ja tõrkeotsing
-
-Andmebaasi kontrollimiseks käivita juurkaustas:
-
-```powershell
-docker compose -f docker-compose.movies.yml ps
-docker compose -f docker-compose.movies.yml exec db mariadb -u root -p
-```
-
-Seejärel MariaDB-s (root-parool on Compose’i seadistuses):
 
 ```sql
-USE kino;
-SELECT COUNT(*) FROM movies;
-SELECT id, title, duration FROM movies;
+SHOW TABLES;
+SELECT id, title FROM movies;
+SELECT * FROM sessions;
+SELECT id, email FROM users;
+exit;
 ```
 
-Algandmetes on **12 filmi**. Kui kasutajaliides neid ei laadi, kontrolli esmalt brauseris API aadressi, seejärel backendi tööd, `.env` vastavust MariaDB-le ja Vite’i CORS-aadressi. Kui Vite valib teise pordi, uuenda backendi CORS-i seadistust.
+#### Prisma
 
-### Edasine arendus
+Käivita käsud kaustas `backend`. Esmane seadistamine, olemasoleva andmebaasi algmigratsiooni registreerimine ja variandmebaasi seadistamine on kirjeldatud failis [backend/README.md](backend/README.md#eesti).
 
-Filmiplakatid ja treilerid, seansid, kinod ja saalid, püsiv kohtade saadavus, registreerimine ja sisselogimine, päris broneerimine ja maksmine, filmide haldus ning broneeringute serveripoolne valideerimine. Projekt on arendamisel.
+| Käsk | Otstarve |
+|---|---|
+| `npm.cmd run prisma:studio` | Ava andmete redaktor |
+| `npm.cmd run prisma:status` | Kontrolli migratsioone |
+| `npm.cmd run prisma:deploy` | Rakenda olemasolevad migratsioonid |
+| `npm.cmd run prisma:generate` | Genereeri Prisma Client uuesti |
+| `npm.cmd run prisma:migrate -- --name describe_change` | Loo migratsioon pärast skeemi muutmist; nõuab variandmebaasi |
+| `npm.cmd run prisma:seed` | Lisa puuduvad õppefilmid 1–3 |
+
+Studio kuvab Prisma mudeleid: praegu filme ja arvustusi. Seansside ja kasutajatega tööta SQL-i kaudu. Ava terminalis kuvatud aadress; Studio peatamiseks vajuta `Ctrl+C`. Salvestatud muudatused muudavad andmebaasi kirjeid.
+
+SQL-faili rakendamiseks kopeeri see konteinerisse ja ava konsool. Näiteks plakatite uuendamine:
+
+```powershell
+docker compose -f docker-compose.movies.yml cp database/update_posters.sql db:/tmp/update_posters.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
+```
+
+Seejärel MariaDB-s:
+
+```sql
+SOURCE /tmp/update_posters.sql;
+exit;
+```
+
+**Andmed säilivad Dockeri volume'is. `docker compose -f docker-compose.movies.yml down -v` ja `prisma migrate reset` kustutavad need.** Parooli muutmine Compose'is ei muuda olemasoleva andmebaasi parooli.
+
+### 5. Kontroll ja levinud vead
+
+Projekti juurkaustast:
+
+```powershell
+# Koostamine
+npm.cmd --prefix backend run build
+npm.cmd --prefix frontend run build
+
+# Testid
+npm.cmd --prefix backend test -- --runInBand
+npm.cmd --prefix frontend run test:unit -- --run
+
+# Andmebaasi olek ja logid
+docker compose -f docker-compose.movies.yml ps
+docker compose -f docker-compose.movies.yml logs --tail 100 db
+```
+
+| Probleem | Mida kontrollida |
+|---|---|
+| Andmebaas pole kättesaadav | Docker Desktop, konteiner, port `3308` |
+| `Access denied` | Parool ja seaded failis `backend/.env` |
+| Seansid / kasutajate tabel puuduvad | Failide `sessions.sql` / `users.sql` import |
+| API pole kättesaadav | Backend ja vead selle terminalis |
+| API töötab, veebileht ei laadi andmeid | Frontendi port: CORS lubab porti `5173` |
+| Prisma: tabel on juba olemas | Migratsioonide esmane seadistamine failis `backend/README.md` |
 
 ---
 
 ## Русский
+Учебный сайт кинотеатра: фильмы, сеансы, выбор мест, регистрация и демонстрационная покупка билетов.
 
-### Обновление: сеансы фильмов
+**Стек:** Vue 3 · TypeScript · NestJS · MariaDB · Docker.
 
-Добавили сеансы в MariaDB со связью с фильмами, кнопку `Show sessions` с состояниями загрузки, ошибки и пустого списка, а также `Choose seats` у каждого сеанса. Страница мест получает выбранный сеанс через API и проверяет его принадлежность фильму. Места пока демонстрационные.
+Команды — для **Windows PowerShell**. На macOS/Linux используй `npm` / `npx` вместо `npm.cmd` / `npx.cmd`.
 
-**Для команды:** Получите свежий код (`git pull`). У каждого участника своя локальная база. Compose импортирует только `movies.sql`, а `database/sessions.sql` нужно загрузить отдельно. Перезапуск Docker не обновляет существующую базу. Запустите Docker Desktop и выполните из корня проекта:
+### 1. Установка и первый запуск
 
-```powershell
-docker compose -f docker-compose.movies.yml up -d
-docker compose -f docker-compose.movies.yml cp database/sessions.sql db:/tmp/sessions.sql
-docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
-```
+Установи **Node.js 24.12+**, **Git**, **Docker Desktop**. Для разработки: VS Code + расширение Vue (Official).
 
-Введите пароль пользователя вашей локальной базы (при новой настройке это `MARIADB_PASSWORD` из Compose). В консоли MariaDB:
-
-```sql
-SHOW TABLES LIKE 'sessions';
--- Если таблица есть, перед импортом проверьте записи:
--- SELECT COUNT(*) FROM sessions;
--- Импортируйте только при отсутствии таблицы или если она пустая:
-SOURCE /tmp/sessions.sql;
-SELECT movie_id, COUNT(*) FROM sessions GROUP BY movie_id;
-exit;
-```
-
-Выполняйте `SOURCE` только один раз для пустой таблицы сеансов: повторный импорт создаст дубликаты. Фильмы 1–12 уже должны быть в базе (первоначальная настройка использует `database/movies.sql`). Удалять Docker volume не нужно. Перезапустите backend из папки `backend` командой `npm.cmd run start:dev` и запустите frontend по инструкции ниже. Проверьте `http://localhost:3000/api/movies/1/sessions`: ожидаются два сеанса; у фильма №6 специально нет сеансов, ответ — `[]`. Ошибка `Cannot GET` с кодом 404 означает, что новый маршрут не запущен: проверьте обновление кода и перезапустите backend. При ошибке подключения проверьте соответствие `backend/.env` данным локальной базы.
-
-Новые адреса: `GET /api/movies/:id/sessions` (список) и `GET /api/movies/:id/sessions/:sessionId` (один сеанс; 404, если отсутствует или принадлежит другому фильму).
-
-### Практика Prisma ORM
-
-**Как открыть Prisma Studio (после первоначальной настройки):** Запусти Docker Desktop и контейнер MariaDB. Из корня проекта выполни:
-
-```powershell
-cd backend
-npm.cmd run prisma:studio
-```
-
-Если терминал уже находится в `backend`, выполни только `npm.cmd run prisma:studio`. Открой локальный адрес из терминала; порт может меняться. Оставь терминал работающим, пока используешь Studio. Для остановки нажми `Ctrl+C` и подтверди `Y`, если появится вопрос. Сохранённые в MariaDB изменения останутся после закрытия Studio; перед выходом сохрани незавершённые правки.
-
-Prisma ORM 7 установлен в `backend` для обучения рядом с существующим API на mysql2. Начни с [руководства Prisma на русском](backend/README.md#русский): модели Movie и Review, связи один ко многим, безопасная регистрация исходной миграции существующей базы и примеры запросов. API продолжает использовать существующие SQL-запросы.
-
-Выполняй из `backend` после настройки `.env` и выполнения инструкций руководства по первоначальной регистрации миграции:
-
-```powershell
-npm.cmd run prisma:validate
-npm.cmd run prisma:deploy
-npm.cmd run prisma:generate
-npm.cmd run prisma:seed
-npm.cmd run prisma:status
-```
-
-Для своих изменений схемы: `npm.cmd run prisma:migrate -- --name describe_change`, затем `npm.cmd run prisma:generate`. Миграциям разработки нужна отдельная теневая база; её настройка описана в руководстве. Seed добавляет отсутствующие фильмы 1–3 из `database/movies.sql`, сохраняя существующие записи.
-
-BOOBLICKI — учебный сайт кинотеатра. Теперь информация о фильмах хранится в **нашей MariaDB**, а frontend на Vue получает её через **наш REST API на NestJS**. Внешний Apollo Kino API больше не используется.
-
-### Что уже работает
-
-- Загрузка 12 фильмов из MariaDB через собственный API.
-- Поиск фильмов по названию.
-- Просмотр названия, жанра, продолжительности, описания, года выпуска, режиссёра и возрастного ограничения.
-- Переход с афиши на отдельную страницу выбора мест для выбранного фильма.
-- Демонстрационный зал: 5 рядов по 8 мест, выбор и отмена выбора, показ выбранных мест, недоступные места и очистка выбора.
-
-**Пока не реализовано:** настоящая бронь мест в базе, оплата и оформление заказа. Выбранные места хранятся только в памяти страницы и сбрасываются после обновления или смены фильма. Поля постеров и трейлеров присутствуют в API, но в начальных данных пока имеют значение `null`.
-
-### Технологии
-
-- Frontend: **Vue 3, TypeScript, Vite, Vue Router**.
-- Backend: **NestJS, TypeScript, mysql2, dotenv**.
-- База: **MariaDB 11**, Docker Compose, постоянный Docker volume.
-- Инструменты: VS Code, Git, GitHub, Docker Desktop.
-
-### Структура проекта
-
-```text
-kino_project/
-├── backend/
-│   ├── src/
-│   │   ├── main.ts                  # Запуск NestJS и CORS
-│   │   └── movies/
-│   │       ├── movies.controller.ts # Собственный API фильмов
-│   │       └── movies.database.ts   # Подключение MariaDB
-│   ├── .env                        # Локальный пароль, не загружать в Git
-│   └── package.json
-├── frontend/
-│   └── src/
-│       ├── views/
-│       │   ├── MoviesView.vue       # Афиша и поиск
-│       │   └── BookingView.vue      # Отдельная страница выбора мест
-│       └── components/
-│           └── SeatPicker.vue
-├── database/
-│   └── movies.sql                  # Первоначальные 12 фильмов
-├── docker-compose.movies.yml      # Контейнер MariaDB
-└── README.md
-```
-
-### Что нужно установить
-
-Node.js (в разработке использовалась версия 24), Git, Docker Desktop с поддержкой Docker Compose.
-
-Если проект ещё не скачан:
+Скачай проект и установи зависимости:
 
 ```powershell
 git clone https://github.com/klaccdeduska/kino_project.git
 cd kino_project
+npm.cmd ci --prefix backend
+npm.cmd ci --prefix frontend
 ```
 
-### Первый запуск на новом компьютере
-
-Сначала открой Docker Desktop. В корне проекта выполни:
+Запусти Docker Desktop, затем из корня проекта:
 
 ```powershell
 docker compose -f docker-compose.movies.yml up -d
 ```
 
-База `kino` доступна на `localhost:3308` (внутри контейнера — порт `3306`). При **первом создании пустого Docker volume** файл инициализации SQL загружает 12 фильмов. При повторном запуске данные сохраняются. Не используй `docker compose down -v`, если не хочешь удалить данные базы.
+На новом пустом Docker volume автоматически создаётся база `kino` с 12 фильмами. Дождись готовности MariaDB перед импортом SQL.
 
-Создай **`backend/.env`** и подставь пароль из `docker-compose.movies.yml`:
+Создай `backend/.env`:
 
 ```dotenv
 DB_HOST=127.0.0.1
 DB_PORT=3308
 DB_USER=kino_user
-DB_PASSWORD=YOUR_MARIADB_PASSWORD
+DB_PASSWORD=YOUR_PASSWORD
 DB_NAME=kino
+DATABASE_URL="mysql://kino_user:YOUR_PASSWORD@127.0.0.1:3308/kino"
 ```
 
-Проверь, что имя пользователя и пароль совпадают с настройками Docker Compose. Исключи `.env` из Git и не добавляй его в GitHub; в документации используй только примеры паролей. Если база уже была создана, изменение пароля в Compose не изменяет пароль существующего пользователя автоматически.
+`YOUR_PASSWORD` — значение `MARIADB_PASSWORD` из Compose, для существующей базы — её действующий пароль. Спецсимволы в URL кодируются: например, `@` → `%40`. **Не добавляй `.env` в Git.**
 
-Установка зависимостей **только при первой настройке компьютера** или после изменения зависимостей:
+Добавь сеансы и таблицу пользователей из корня проекта:
 
 ```powershell
-cd backend
-npm.cmd install
-cd ..\frontend
-npm.cmd install
-cd ..
+docker compose -f docker-compose.movies.yml cp database/sessions.sql db:/tmp/sessions.sql
+docker compose -f docker-compose.movies.yml cp database/users.sql db:/tmp/users.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
 ```
 
-### Как запускать проект каждый раз — три терминала VS Code
+Введи пароль, затем в MariaDB:
 
-Открой папку `kino_project`. Запусти Docker Desktop. Команды ниже рассчитаны на запуск **из корня проекта** в отдельных терминалах.
+```sql
+SOURCE /tmp/sessions.sql;
+SOURCE /tmp/users.sql;
+exit;
+```
 
-**Терминал 1 — база данных:**
+**Сеансы импортируй один раз в отсутствующую или пустую таблицу:** повторный импорт создаёт дубликаты. Затем запусти проект по следующему разделу.
+
+### 2. Повседневный запуск
+
+Запусти Docker Desktop. Команды выполняй **из корня проекта**, backend и frontend — в отдельных терминалах:
 
 ```powershell
+# База данных
 docker compose -f docker-compose.movies.yml up -d
 ```
 
-**Терминал 2 — backend:**
+```powershell
+# Backend
+npm.cmd --prefix backend run start:dev
+```
+
+```powershell
+# Frontend
+npm.cmd --prefix frontend run dev
+```
+
+- **Сайт:** http://localhost:5173
+- **API:** http://localhost:3000/api/movies
+
+Backend и frontend оставь работающими. Остановка — `Ctrl+C`. Остановить базу с сохранением данных:
+
+```powershell
+docker compose -f docker-compose.movies.yml stop
+```
+
+### 3. Обновление проекта
+
+Сохрани свои изменения коммитом или через `git stash`, затем из корня:
+
+```powershell
+git pull
+```
+
+Если изменились зависимости:
+
+```powershell
+npm.cmd ci --prefix backend
+npm.cmd ci --prefix frontend
+```
+
+Если появились Prisma-миграции и Prisma уже настроена, при работающей базе:
 
 ```powershell
 cd backend
-npm.cmd run start:dev
+npm.cmd run prisma:deploy
+npm.cmd run prisma:generate
+cd ..
 ```
 
-API фильмов: http://localhost:3000/api/movies
+Новые SQL-скрипты применяй отдельно по инструкции к изменению. Затем перезапусти backend и frontend.
 
-**Терминал 3 — frontend:**
+**`git pull` и перезапуск Docker сами базу не обновляют.**
+
+### 4. Работа с базой
+
+Открыть SQL-консоль из корня:
 
 ```powershell
-cd frontend
-npm.cmd run dev
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
 ```
-
-Открой адрес `Local`, который покажет Vite: обычно http://localhost:5173. Оставь оба терминала с серверами открытыми. В Windows PowerShell используется `npm.cmd`, чтобы избежать возможной блокировки `npm.ps1`. На macOS/Linux или при подходящих настройках PowerShell можно использовать `npm`.
-
-### Наш API
-
-| Метод | Адрес | Результат |
-| --- | --- | --- |
-| `GET` | `/api/movies` | Все фильмы из MariaDB |
-| `GET` | `/api/movies/:id` | Один фильм по ID; 404, если не найден |
-
-Каждый фильм содержит `id`, `title`, `genre`, `duration` (в минутах), `description`, `releaseYear`, `director`, `ageRating`, `poster`, `trailer`.
-
-В `backend/src/main.ts` разрешён CORS для `http://localhost:5173`. Если Vite запустится на другом порту, настройку CORS нужно обновить.
-
-### Проверка базы и API
-
-В корне проекта:
-
-```powershell
-docker compose -f docker-compose.movies.yml ps
-docker compose -f docker-compose.movies.yml exec db mariadb -u root -p
-```
-
-В MariaDB (пароль root указан в Compose):
 
 ```sql
-USE kino;
-SELECT COUNT(*) FROM movies;
-SELECT id, title, duration FROM movies;
+SHOW TABLES;
+SELECT id, title FROM movies;
+SELECT * FROM sessions;
+SELECT id, email FROM users;
+exit;
 ```
 
-В начальной базе должно быть **12 фильмов**. Если сайт не показывает фильмы, открой http://localhost:3000/api/movies и проверь, что backend запущен, `.env` настроен правильно и frontend работает на нужном порту.
+#### Prisma
 
-### План разработки
+Команды выполняются из `backend`. Первичная настройка, регистрация существующей базы и создание теневой базы описаны в [backend/README.md](backend/README.md#русский).
 
-Постеры и трейлеры, расписание сеансов, залы, сохранение бронирований, проверка свободных мест на сервере, регистрация пользователей, полноценная продажа билетов и управление фильмами.
+| Команда | Назначение |
+|---|---|
+| `npm.cmd run prisma:studio` | Открыть редактор данных |
+| `npm.cmd run prisma:status` | Проверить миграции |
+| `npm.cmd run prisma:deploy` | Применить готовые миграции |
+| `npm.cmd run prisma:generate` | Обновить Prisma Client |
+| `npm.cmd run prisma:migrate -- --name describe_change` | Создать миграцию после изменения схемы; нужна теневая база |
+| `npm.cmd run prisma:seed` | Добавить отсутствующие учебные фильмы № 1–3 |
 
-**Статус:** проект в разработке; система выбора мест пока демонстрационная.
+Studio показывает модели Prisma: сейчас фильмы и отзывы. Сеансы и пользователи доступны через SQL. Открой адрес из терминала; завершение Studio — `Ctrl+C`. Сохранённые изменения меняют данные в базе.
+
+Для применения SQL-файла скопируй его в контейнер и открой консоль. Например, обновление постеров:
+
+```powershell
+docker compose -f docker-compose.movies.yml cp database/update_posters.sql db:/tmp/update_posters.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
+```
+
+Затем в MariaDB:
+
+```sql
+SOURCE /tmp/update_posters.sql;
+exit;
+```
+
+**Данные сохраняются в Docker volume. `docker compose -f docker-compose.movies.yml down -v` и `prisma migrate reset` удаляют их.** Изменение пароля в Compose не меняет пароль существующей базы.
+
+### 5. Проверки и частые ошибки
+
+Из корня проекта:
+
+```powershell
+# Сборка
+npm.cmd --prefix backend run build
+npm.cmd --prefix frontend run build
+
+# Тесты
+npm.cmd --prefix backend test -- --runInBand
+npm.cmd --prefix frontend run test:unit -- --run
+
+# Состояние и логи базы
+docker compose -f docker-compose.movies.yml ps
+docker compose -f docker-compose.movies.yml logs --tail 100 db
+```
+
+| Проблема | Что проверить |
+|---|---|
+| База недоступна | Docker Desktop, контейнер, порт `3308` |
+| `Access denied` | Пароль и параметры в `backend/.env` |
+| Нет сеансов / таблицы пользователей | Импорт `sessions.sql` / `users.sql` |
+| API недоступен | Backend и ошибки в его терминале |
+| API работает, сайт не загружает данные | Порт frontend: CORS настроен на `5173` |
+| Prisma: таблица уже существует | Первичную настройку миграций в `backend/README.md` |
