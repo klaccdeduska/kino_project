@@ -4,6 +4,34 @@ Languages / Keeled / Языки: [English](#english) · [Eesti](#eesti) · [Ру
 
 ## English
 
+### Update: movie sessions
+
+Added MariaDB sessions linked to movies, `Show sessions` with loading/error/empty states, and `Choose seats` for each session. The booking page loads the selected session from the API and checks that it belongs to the movie. Seats remain demonstration data.
+
+**Team setup:** Pull the latest changes (`git pull`). Each teammate has a separate local database: Compose imports only `movies.sql`, not `database/sessions.sql`. Restarting Docker does not import sessions into an existing volume. From the project root, with Docker Desktop running:
+
+```powershell
+docker compose -f docker-compose.movies.yml up -d
+docker compose -f docker-compose.movies.yml cp database/sessions.sql db:/tmp/sessions.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
+```
+
+Enter the database user's password configured for your local database (`MARIADB_PASSWORD` in Compose for a fresh setup). In the MariaDB shell:
+
+```sql
+SHOW TABLES LIKE 'sessions';
+-- If the table exists, check its contents before importing:
+-- SELECT COUNT(*) FROM sessions;
+-- Only import if the table is missing or empty:
+SOURCE /tmp/sessions.sql;
+SELECT movie_id, COUNT(*) FROM sessions GROUP BY movie_id;
+exit;
+```
+
+Run `SOURCE` only once on an empty sessions table: repeating it duplicates the sessions. Movies 1–12 must already exist (initial setup uses `database/movies.sql`). Do not delete the Docker volume. Restart the backend from `backend` with `npm.cmd run start:dev` and start the frontend as described below. Check `http://localhost:3000/api/movies/1/sessions`: it should return two sessions; movie 6 intentionally returns `[]`. A `Cannot GET` 404 means the new route is not running; check the updated code and restart the backend. For connection errors, check `backend/.env` against your local database credentials.
+
+New endpoints: `GET /api/movies/:id/sessions` (list) and `GET /api/movies/:id/sessions/:sessionId` (one session; 404 if missing or linked to another movie).
+
 ### Prisma ORM practice
 
 Prisma ORM 7 is installed in `backend` for learning alongside the existing mysql2 API. Start with the [beginner Prisma guide](backend/README.md#english): Movie and Review models, one-to-many relations, safe existing-database baselining, and query examples. The API continues to use its existing SQL queries.
@@ -171,6 +199,34 @@ Movie posters, showtimes, cinemas/halls, persistent seat availability, registrat
 
 ## Eesti
 
+### Uuendus: filmiseansid
+
+Lisasime filmidega seotud seansid MariaDB-sse, nupu `Show sessions` koos laadimise, vea ja tühja loendi teadetega ning iga seansi juurde lingi `Choose seats`. Kohtade valimise leht laadib seansi API kaudu ja kontrollib selle seost filmiga. Istekohad on endiselt näidisandmed.
+
+**Juhend meeskonnale:** Laadi uusim kood (`git pull`). Igal arendajal on oma kohalik andmebaas. Compose impordib ainult `movies.sql`, mitte faili `database/sessions.sql`; konteineri taaskäivitamine olemasolevat andmebaasi ei uuenda. Käivita Docker Desktop ja projekti juurkaustas:
+
+```powershell
+docker compose -f docker-compose.movies.yml up -d
+docker compose -f docker-compose.movies.yml cp database/sessions.sql db:/tmp/sessions.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
+```
+
+Sisesta kohaliku andmebaasi kasutaja parool (uue seadistuse puhul Compose'i `MARIADB_PASSWORD`). MariaDB konsoolis:
+
+```sql
+SHOW TABLES LIKE 'sessions';
+-- Kui tabel on olemas, kontrolli enne importimist:
+-- SELECT COUNT(*) FROM sessions;
+-- Impordi ainult siis, kui tabel puudub või on tühi:
+SOURCE /tmp/sessions.sql;
+SELECT movie_id, COUNT(*) FROM sessions GROUP BY movie_id;
+exit;
+```
+
+Käivita `SOURCE` ainult üks kord tühja seansitabeli jaoks: korduv import lisab duplikaadid. Filmid 1–12 peavad juba olemas olema (algseadistus kasutab faili `database/movies.sql`). Ära kustuta Docker volume'it. Taaskäivita backend kaustas `backend` käsuga `npm.cmd run start:dev` ja käivita frontend alloleva juhendi järgi. Aadress `http://localhost:3000/api/movies/1/sessions` peab tagastama kaks seanssi; filmil 6 puuduvad seansid tahtlikult (`[]`). `Cannot GET` koos 404-ga tähendab, et uus marsruut pole käivitatud: kontrolli koodi uuendamist ja taaskäivita backend. Ühendusvea korral kontrolli faili `backend/.env` ühendusandmeid.
+
+Uued aadressid: `GET /api/movies/:id/sessions` (loend) ja `GET /api/movies/:id/sessions/:sessionId` (üks seanss; 404, kui seanss puudub või kuulub teisele filmile).
+
 ### Prisma ORM-i harjutamine
 
 Prisma ORM 7 on paigaldatud kausta `backend` õppimiseks olemasoleva mysql2 API kõrvale. Alusta [eestikeelsest Prisma juhendist](backend/README.md#eesti): mudelid Movie ja Review, üks-mitmele seosed, olemasoleva andmebaasi ohutu algmigratsiooni registreerimine ning päringunäited. API kasutab endiselt olemasolevaid SQL-päringuid.
@@ -327,6 +383,34 @@ Filmiplakatid ja treilerid, seansid, kinod ja saalid, püsiv kohtade saadavus, r
 ---
 
 ## Русский
+
+### Обновление: сеансы фильмов
+
+Добавили сеансы в MariaDB со связью с фильмами, кнопку `Show sessions` с состояниями загрузки, ошибки и пустого списка, а также `Choose seats` у каждого сеанса. Страница мест получает выбранный сеанс через API и проверяет его принадлежность фильму. Места пока демонстрационные.
+
+**Для команды:** Получите свежий код (`git pull`). У каждого участника своя локальная база. Compose импортирует только `movies.sql`, а `database/sessions.sql` нужно загрузить отдельно. Перезапуск Docker не обновляет существующую базу. Запустите Docker Desktop и выполните из корня проекта:
+
+```powershell
+docker compose -f docker-compose.movies.yml up -d
+docker compose -f docker-compose.movies.yml cp database/sessions.sql db:/tmp/sessions.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
+```
+
+Введите пароль пользователя вашей локальной базы (при новой настройке это `MARIADB_PASSWORD` из Compose). В консоли MariaDB:
+
+```sql
+SHOW TABLES LIKE 'sessions';
+-- Если таблица есть, перед импортом проверьте записи:
+-- SELECT COUNT(*) FROM sessions;
+-- Импортируйте только при отсутствии таблицы или если она пустая:
+SOURCE /tmp/sessions.sql;
+SELECT movie_id, COUNT(*) FROM sessions GROUP BY movie_id;
+exit;
+```
+
+Выполняйте `SOURCE` только один раз для пустой таблицы сеансов: повторный импорт создаст дубликаты. Фильмы 1–12 уже должны быть в базе (первоначальная настройка использует `database/movies.sql`). Удалять Docker volume не нужно. Перезапустите backend из папки `backend` командой `npm.cmd run start:dev` и запустите frontend по инструкции ниже. Проверьте `http://localhost:3000/api/movies/1/sessions`: ожидаются два сеанса; у фильма №6 специально нет сеансов, ответ — `[]`. Ошибка `Cannot GET` с кодом 404 означает, что новый маршрут не запущен: проверьте обновление кода и перезапустите backend. При ошибке подключения проверьте соответствие `backend/.env` данным локальной базы.
+
+Новые адреса: `GET /api/movies/:id/sessions` (список) и `GET /api/movies/:id/sessions/:sessionId` (один сеанс; 404, если отсутствует или принадлежит другому фильму).
 
 ### Практика Prisma ORM
 
