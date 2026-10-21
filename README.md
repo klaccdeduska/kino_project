@@ -4,6 +4,31 @@
 
 ## English
 
+### Halls: updating an existing database
+
+Sessions now include `hallId` and `hallName`; both movie and booking pages display the hall. Date buttons, the calendar filter, and shared date/end-time formatting are also available. Seat layouts remain a separate feature.
+
+After pulling the latest code, check your database in the MariaDB shell: `SHOW TABLES LIKE 'halls';` and `SHOW COLUMNS FROM sessions LIKE 'hall_id';`. If both already exist, skip the imports below. If sessions exist but halls and `hall_id` do not, run from the project root:
+
+```powershell
+docker compose -f docker-compose.movies.yml cp database/halls.sql db:/tmp/halls.sql
+docker compose -f docker-compose.movies.yml cp database/add-session-halls.sql db:/tmp/add-session-halls.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
+```
+
+Enter your local database password, then run once:
+
+```sql
+SOURCE /tmp/halls.sql;
+SOURCE /tmp/add-session-halls.sql;
+SELECT s.id, s.hall_id, h.name FROM sessions AS s JOIN halls AS h ON h.id = s.hall_id;
+exit;
+```
+
+This assigns existing sessions to Hall 1. Do not re-import `sessions.sql` or delete the Docker volume. If halls already exist but `hall_id` is missing, run only `add-session-halls.sql`. Repeating `halls.sql` duplicates halls; repeating the migration fails on the existing column. Restart the backend and check `/api/movies/1/sessions` for `hallId` and `hallName`.
+
+For a **new database**, follow first-run instructions below: movies → halls → sessions → users. Do not run `add-session-halls.sql` on the new schema. The current session seed uses hall IDs 1 and 2: verify them with `SELECT id, name FROM halls;` and adjust the seed if your IDs differ. The SQL files are manual imports; Compose currently initializes only movies. Halls are not yet part of the Prisma schema, so inspect generated migrations before applying schema changes.
+
 Educational cinema website: movies, sessions, seat selection, registration, and demo ticket purchases.
 
 **Stack:** Vue 3 · TypeScript · NestJS · MariaDB · Docker.
@@ -11,6 +36,23 @@ Educational cinema website: movies, sessions, seat selection, registration, and 
 Commands use **Windows PowerShell**. On macOS/Linux, use `npm` / `npx` instead of `npm.cmd` / `npx.cmd`.
 
 ### 1. Installation and first run
+
+**Distribute existing demo sessions between halls:** after adding `hall_id`, run the following from the project root. If the schema is already updated, skip the hall creation and migration above and run only this step.
+
+```powershell
+docker compose -f docker-compose.movies.yml cp database/assign-session-halls.sql db:/tmp/assign-session-halls.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
+```
+
+In MariaDB:
+
+```sql
+SOURCE /tmp/assign-session-halls.sql;
+SELECT s.movie_id, s.starts_at, h.name FROM sessions AS s JOIN halls AS h ON h.id = s.hall_id ORDER BY s.movie_id, s.starts_at;
+exit;
+```
+
+The script updates existing records without changing session IDs or inserting duplicates. It is specific to the demo schedule and overwrites hall assignments for all sessions; do not use it on a customized schedule. Each of `Hall 1` and `Hall 2` must exist exactly once. On a fresh database, `sessions.sql` already assigns halls, so this step is unnecessary. Refresh the website after updating. Scheduling conflicts in the same hall are not checked yet.
 
 Install **Node.js 24.12+**, **Git**, and **Docker Desktop**. For development: VS Code + Vue (Official) extension.
 
@@ -47,6 +89,7 @@ Replace `YOUR_PASSWORD` with `MARIADB_PASSWORD` from Compose, or the current pas
 Add sessions and the users table from the project root:
 
 ```powershell
+docker compose -f docker-compose.movies.yml cp database/halls.sql db:/tmp/halls.sql
 docker compose -f docker-compose.movies.yml cp database/sessions.sql db:/tmp/sessions.sql
 docker compose -f docker-compose.movies.yml cp database/users.sql db:/tmp/users.sql
 docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
@@ -55,6 +98,7 @@ docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
 Enter the password, then run in MariaDB:
 
 ```sql
+SOURCE /tmp/halls.sql;
 SOURCE /tmp/sessions.sql;
 SOURCE /tmp/users.sql;
 exit;
@@ -196,6 +240,31 @@ docker compose -f docker-compose.movies.yml logs --tail 100 db
 
 ## Eesti
 
+### Saalid: olemasoleva andmebaasi uuendamine
+
+Seansid sisaldavad nüüd välju `hallId` ja `hallName`; saali kuvatakse filmide ning kohtade valimise lehel. Lisatud on kuupäevanupud, kalendrifilter ja ühine kuupäeva/lõpuaja vormindus. Istekohtade plaan on eraldi arendus.
+
+Pärast koodi uuendamist kontrolli MariaDB konsoolis: `SHOW TABLES LIKE 'halls';` ja `SHOW COLUMNS FROM sessions LIKE 'hall_id';`. Kui mõlemad on olemas, jäta import vahele. Kui seansid on olemas, kuid saalid ja `hall_id` puuduvad, käivita projekti juurkaustas:
+
+```powershell
+docker compose -f docker-compose.movies.yml cp database/halls.sql db:/tmp/halls.sql
+docker compose -f docker-compose.movies.yml cp database/add-session-halls.sql db:/tmp/add-session-halls.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
+```
+
+Sisesta kohaliku andmebaasi parool ja käivita üks kord:
+
+```sql
+SOURCE /tmp/halls.sql;
+SOURCE /tmp/add-session-halls.sql;
+SELECT s.id, s.hall_id, h.name FROM sessions AS s JOIN halls AS h ON h.id = s.hall_id;
+exit;
+```
+
+Olemasolevad seansid määratakse saali Hall 1. Ära impordi uuesti `sessions.sql` ega kustuta Docker volume'it. Kui saalid on juba olemas, kuid `hall_id` puudub, käivita ainult `add-session-halls.sql`. Saalide korduv import tekitab duplikaate; migratsiooni kordamine annab olemasoleva veeru vea. Taaskäivita backend ja kontrolli aadressil `/api/movies/1/sessions` välju `hallId` ja `hallName`.
+
+**Uue andmebaasi** järjekord on allolevas juhendis: filmid → saalid → seansid → kasutajad. Uuel skeemil ära käivita `add-session-halls.sql`. Seansifail kasutab saalide ID-sid 1 ja 2: kontrolli neid käsuga `SELECT id, name FROM halls;` ning vajadusel muuda seansifaili. SQL-failid imporditakse käsitsi; Compose loob praegu ainult filmid. Saale pole veel Prisma skeemis, seega kontrolli genereeritud migratsioone enne skeemimuudatuste rakendamist.
+
 Õppeprojektina loodud kino veebileht: filmid, seansid, istekohtade valik, registreerimine ja näitlik piletiost.
 
 **Tehnoloogiad:** Vue 3 · TypeScript · NestJS · MariaDB · Docker.
@@ -203,6 +272,23 @@ docker compose -f docker-compose.movies.yml logs --tail 100 db
 Käsud on mõeldud **Windows PowerShellile**. macOS-is/Linuxis kasuta `npm` / `npx` käskude `npm.cmd` / `npx.cmd` asemel.
 
 ### 1. Paigaldamine ja esimene käivitus
+
+**Olemasolevate näidisseansside jaotamine saalidesse:** pärast `hall_id` lisamist käivita projekti juurkaustas järgmised käsud. Kui skeem on juba uuendatud, jäta ülalolev saalide loomine ja migratsioon vahele ning tee ainult see samm.
+
+```powershell
+docker compose -f docker-compose.movies.yml cp database/assign-session-halls.sql db:/tmp/assign-session-halls.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
+```
+
+MariaDB konsoolis:
+
+```sql
+SOURCE /tmp/assign-session-halls.sql;
+SELECT s.movie_id, s.starts_at, h.name FROM sessions AS s JOIN halls AS h ON h.id = s.hall_id ORDER BY s.movie_id, s.starts_at;
+exit;
+```
+
+Skript uuendab kirjeid, säilitades seansside ID-d ega lisa duplikaate. See on mõeldud näidiskavale ja kirjutab kõigi seansside saalimäärangud üle; ära kasuta seda kohandatud kava puhul. Saalid `Hall 1` ja `Hall 2` peavad kumbki olemas olema täpselt üks kord. Uues andmebaasis määrab `sessions.sql` saalid juba ise, seega seda sammu pole vaja. Pärast uuendamist värskenda veebilehte. Samas saalis kattuvaid seansse veel ei kontrollita.
 
 Paigalda **Node.js 24.12+**, **Git** ja **Docker Desktop**. Arendamiseks: VS Code + laiendus Vue (Official).
 
@@ -239,6 +325,7 @@ Asenda `YOUR_PASSWORD` Compose'i väärtusega `MARIADB_PASSWORD` või olemasolev
 Lisa seansid ja kasutajate tabel projekti juurkaustast:
 
 ```powershell
+docker compose -f docker-compose.movies.yml cp database/halls.sql db:/tmp/halls.sql
 docker compose -f docker-compose.movies.yml cp database/sessions.sql db:/tmp/sessions.sql
 docker compose -f docker-compose.movies.yml cp database/users.sql db:/tmp/users.sql
 docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
@@ -247,6 +334,7 @@ docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
 Sisesta parool, seejärel MariaDB-s:
 
 ```sql
+SOURCE /tmp/halls.sql;
 SOURCE /tmp/sessions.sql;
 SOURCE /tmp/users.sql;
 exit;
@@ -387,6 +475,31 @@ docker compose -f docker-compose.movies.yml logs --tail 100 db
 ---
 
 ## Русский
+
+### Залы: обновление существующей базы
+
+Сеансы теперь содержат `hallId` и `hallName`; зал отображается в списке фильмов и на странице выбора мест. Также добавлены кнопки дат, фильтр календаря и общее форматирование даты и времени окончания. Схема мест разрабатывается отдельно.
+
+После получения свежего кода проверьте в консоли MariaDB: `SHOW TABLES LIKE 'halls';` и `SHOW COLUMNS FROM sessions LIKE 'hall_id';`. Если таблица и поле уже есть, импорт ниже пропустите. Если сеансы есть, а залов и `hall_id` ещё нет, выполните из корня проекта:
+
+```powershell
+docker compose -f docker-compose.movies.yml cp database/halls.sql db:/tmp/halls.sql
+docker compose -f docker-compose.movies.yml cp database/add-session-halls.sql db:/tmp/add-session-halls.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
+```
+
+Введите пароль локальной базы, затем выполните один раз:
+
+```sql
+SOURCE /tmp/halls.sql;
+SOURCE /tmp/add-session-halls.sql;
+SELECT s.id, s.hall_id, h.name FROM sessions AS s JOIN halls AS h ON h.id = s.hall_id;
+exit;
+```
+
+Существующие сеансы получат Hall 1. Не импортируйте повторно `sessions.sql` и не удаляйте Docker volume. Если залы уже созданы, но `hall_id` отсутствует, выполните только `add-session-halls.sql`. Повторный импорт залов создаёт дубликаты, а повторная миграция завершается ошибкой существующего столбца. Перезапустите backend и проверьте поля `hallId` и `hallName` в `/api/movies/1/sessions`.
+
+Для **новой базы** используйте инструкцию первого запуска ниже: фильмы → залы → сеансы → пользователи. На новой схеме `add-session-halls.sql` не нужен. В файле сеансов используются ID залов 1 и 2: проверьте их через `SELECT id, name FROM halls;` и при отличиях исправьте файл сеансов. SQL-файлы импортируются вручную; Compose сейчас создаёт только фильмы. Залы пока не описаны в схеме Prisma, поэтому перед применением изменений схемы проверяйте сгенерированные миграции.
 Учебный сайт кинотеатра: фильмы, сеансы, выбор мест, регистрация и демонстрационная покупка билетов.
 
 **Стек:** Vue 3 · TypeScript · NestJS · MariaDB · Docker.
@@ -394,6 +507,23 @@ docker compose -f docker-compose.movies.yml logs --tail 100 db
 Команды — для **Windows PowerShell**. На macOS/Linux используй `npm` / `npx` вместо `npm.cmd` / `npx.cmd`.
 
 ### 1. Установка и первый запуск
+
+**Распределение существующих учебных сеансов по залам:** после добавления `hall_id` выполните из корня проекта команды ниже. Если схема уже обновлена, пропустите создание залов и миграцию выше — нужен только этот шаг.
+
+```powershell
+docker compose -f docker-compose.movies.yml cp database/assign-session-halls.sql db:/tmp/assign-session-halls.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
+```
+
+В консоли MariaDB:
+
+```sql
+SOURCE /tmp/assign-session-halls.sql;
+SELECT s.movie_id, s.starts_at, h.name FROM sessions AS s JOIN halls AS h ON h.id = s.hall_id ORDER BY s.movie_id, s.starts_at;
+exit;
+```
+
+Скрипт обновляет записи, сохраняя ID сеансов и не добавляя дубликатов. Он рассчитан на учебное расписание и перезаписывает назначения залов всех сеансов; для собственного расписания его использовать не нужно. Залы `Hall 1` и `Hall 2` должны существовать каждый ровно в одном экземпляре. В новой базе `sessions.sql` уже назначает залы, поэтому этот шаг не нужен. После обновления перезагрузите страницу сайта. Пересечения показов в одном зале пока не проверяются.
 
 Установи **Node.js 24.12+**, **Git**, **Docker Desktop**. Для разработки: VS Code + расширение Vue (Official).
 
@@ -430,6 +560,7 @@ DATABASE_URL="mysql://kino_user:YOUR_PASSWORD@127.0.0.1:3308/kino"
 Добавь сеансы и таблицу пользователей из корня проекта:
 
 ```powershell
+docker compose -f docker-compose.movies.yml cp database/halls.sql db:/tmp/halls.sql
 docker compose -f docker-compose.movies.yml cp database/sessions.sql db:/tmp/sessions.sql
 docker compose -f docker-compose.movies.yml cp database/users.sql db:/tmp/users.sql
 docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
@@ -438,6 +569,7 @@ docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
 Введи пароль, затем в MariaDB:
 
 ```sql
+SOURCE /tmp/halls.sql;
 SOURCE /tmp/sessions.sql;
 SOURCE /tmp/users.sql;
 exit;

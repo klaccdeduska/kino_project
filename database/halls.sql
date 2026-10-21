@@ -1,0 +1,11 @@
+USE kino;
+
+CREATE TABLE IF NOT EXISTS halls (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL
+);
+
+INSERT INTO halls (name)
+VALUES
+  ('Hall 1'),
+  ('Hall 2');

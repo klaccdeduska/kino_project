@@ -30,6 +30,8 @@ interface Session {
   movieId: number
   date: string
   time: string
+  hallId: number
+  hallName: string
 }
 
 const sessions = ref<Session[]>([])
@@ -206,6 +208,7 @@ onMounted(loadMovies)
           <template v-else>
             <div v-for="session in filteredSessions" :key="session.id">
               <span>
+                {{ session.hallName }} — 
                 {{ formatSessionDate(session.date) }} —
                 {{ session.time }}–{{ getSessionEndTime(session.time, movie.duration) }}
                 <small v-if="endsNextDay(session.time, movie.duration)">

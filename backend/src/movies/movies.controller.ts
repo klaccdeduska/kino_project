@@ -28,6 +28,8 @@ interface SessionRow extends RowDataPacket {
   movieId: number;
   date: string;
   time: string;
+  hallId: number;
+  hallName: string;
 }
 
 const SELECT_MOVIES = `
@@ -62,18 +64,21 @@ export class MoviesController {
     @Param('id', ParseIntPipe) movieId: number,
     @Param('sessionId', ParseIntPipe) sessionId: number
   ) {
-    const [rows] = await pool.query<SessionRow[]>(
-      `
-      SELECT
-        id,
-        movie_id AS movieId,
-        DATE_FORMAT(starts_at, '%Y-%m-%d') AS date,
-        DATE_FORMAT(starts_at, '%H:%i') AS time
-      FROM sessions
-      WHERE movie_id = ? AND id = ?
-    `,
-      [movieId, sessionId]
-    );
+const [rows] = await pool.query<SessionRow[]>(
+  `
+    SELECT
+      s.id,
+      s.movie_id AS movieId,
+      DATE_FORMAT(s.starts_at, '%Y-%m-%d') AS date,
+      DATE_FORMAT(s.starts_at, '%H:%i') AS time,
+      h.id AS hallId,
+      h.name AS hallName
+    FROM sessions AS s
+    JOIN halls AS h ON h.id = s.hall_id
+    WHERE s.movie_id = ? AND s.id = ?
+  `,
+  [movieId, sessionId]
+);
 
     const session = rows[0];
 
@@ -88,19 +93,22 @@ export class MoviesController {
   async findSessions(
     @Param('id', ParseIntPipe) movieId: number
   ) {
-    const [rows] = await pool.query<SessionRow[]>(
-      `
-      SELECT
-        id,
-        movie_id AS movieId,
-        DATE_FORMAT(starts_at, '%Y-%m-%d') AS date,
-        DATE_FORMAT(starts_at, '%H:%i') AS time
-      FROM sessions
-      WHERE movie_id = ?
-      ORDER BY starts_at, id
-    `,
-      [movieId]
-    );
+const [rows] = await pool.query<SessionRow[]>(
+  `
+    SELECT
+      s.id,
+      s.movie_id AS movieId,
+      DATE_FORMAT(s.starts_at, '%Y-%m-%d') AS date,
+      DATE_FORMAT(s.starts_at, '%H:%i') AS time,
+      h.id AS hallId,
+      h.name AS hallName
+    FROM sessions AS s
+    JOIN halls AS h ON h.id = s.hall_id
+    WHERE s.movie_id = ?
+    ORDER BY s.starts_at, s.id
+  `,
+  [movieId]
+);
 
     return rows;
   }

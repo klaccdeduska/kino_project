@@ -14,6 +14,8 @@ interface Session {
   movieId: number
   date: string
   time: string
+  hallId: number
+  hallName: string
 }
 
 const route = useRoute()
@@ -117,6 +119,7 @@ watch(
 
     <template v-else-if="session">
       <p>{{ movieTitle }}</p>
+      <p>Hall: {{ session.hallName }}</p>
       <p>
         Session: {{ formatSessionDate(session.date) }} —
         {{ session.time }}–{{ getSessionEndTime(session.time, movieDuration) }}
