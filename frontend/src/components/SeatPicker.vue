@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { formatPrice, ticketPriceCents } from '../stores/booking'
+import {
+  calculateTotalCents,
+  formatPrice,
+  ticketPriceCents,
+  vipTicketPriceCents,
+} from '../stores/booking'
 
 type SeatCategory = 'standard' | 'double' | 'vip'
 
@@ -78,7 +83,7 @@ function normalizeInitialSeats(): string[] {
 const selectedSeats = ref<string[]>(normalizeInitialSeats())
 
 const totalCents = computed(
-  () => selectedSeats.value.length * ticketPriceCents,
+  () => calculateTotalCents(selectedSeats.value),
 )
 
 function isGroupSelected(seatIds: string[]) {
@@ -93,8 +98,10 @@ const selectedGroups = computed(() => {
       const group = getSeatGroup(row, seat)
 
       if (isGroupSelected(group)) {
+        const price = formatPrice(calculateTotalCents(group))
+
         result.push(
-          `${group.join(' + ')} (${categoryLabels[row.category]})`,
+          `${group.join(' + ')} (${categoryLabels[row.category]}) — ${price}`,
         )
       }
     }
@@ -127,7 +134,7 @@ function seatLabel(row: HallRow, seat: number) {
 
 function seatDescription(row: HallRow, seat: number) {
   const group = getSeatGroup(row, seat)
-  const price = formatPrice(group.length * ticketPriceCents)
+  const price = formatPrice(calculateTotalCents(group))
 
   const status = isGroupOccupied(group)
     ? 'занято'
@@ -152,64 +159,74 @@ function clearSelection() {
     <h2>Зал 1</h2>
     <p>Демонстрационные цены и доступность мест.</p>
 
-    <p class="screen-label">ЭКРАН</p>
-    <hr />
+    <div class="hall-scroll">
+      <div class="hall">
+        <div class="screen" aria-label="Экран">
+          <div class="screen-curve" aria-hidden="true"></div>
+          <span class="screen-label">ЭКРАН</span>
+        </div>
 
-    <div class="seats-scroll">
-      <div class="seats-grid">
-        <div
-          v-for="row in rows"
-          :key="row.id"
-          class="seat-row"
-        >
-          <span class="row-label">
-            Ряд {{ row.id }} · {{ categoryLabels[row.category] }}
-          </span>
+        <div class="seats-grid">
+          <div
+            v-for="row in rows"
+            :key="row.id"
+            class="seat-row"
+            role="group"
+            :aria-label="`Ряд ${row.id}, ${categoryLabels[row.category]}`"
+          >
+            <span class="row-label" aria-hidden="true">
+              {{ row.id }}
+            </span>
 
-          <div class="row-seats">
-            <button
-              v-for="seat in getGroupCount(row)"
-              :key="seat"
-              type="button"
-              class="seat"
-              :class="[
-                `seat--${row.category}`,
-                {
-                  'seat--selected': isGroupSelected(
-                    getSeatGroup(row, seat),
-                  ),
-                },
-              ]"
-              :disabled="isGroupOccupied(getSeatGroup(row, seat))"
-              :aria-label="seatDescription(row, seat)"
-              :aria-pressed="isGroupSelected(getSeatGroup(row, seat))"
-              :title="seatDescription(row, seat)"
-              @click="toggleGroup(getSeatGroup(row, seat))"
-            >
-              <span class="seat-back" aria-hidden="true">
-                <span class="seat-number">
-                  {{ seatLabel(row, seat) }}
+            <div class="row-seats">
+              <button
+                v-for="seat in getGroupCount(row)"
+                :key="seat"
+                type="button"
+                class="seat"
+                :class="[
+                  `seat--${row.category}`,
+                  {
+                    'seat--selected': isGroupSelected(
+                      getSeatGroup(row, seat),
+                    ),
+                  },
+                ]"
+                :disabled="isGroupOccupied(getSeatGroup(row, seat))"
+                :aria-label="seatDescription(row, seat)"
+                :aria-pressed="isGroupSelected(getSeatGroup(row, seat))"
+                :title="seatDescription(row, seat)"
+                @click="toggleGroup(getSeatGroup(row, seat))"
+              >
+                <span class="seat-back" aria-hidden="true">
+                  <span class="seat-number">
+                    {{ seatLabel(row, seat) }}
+                  </span>
+
+                  <span class="seat-status">
+                    <template
+                      v-if="isGroupOccupied(getSeatGroup(row, seat))"
+                    >
+                      ×
+                    </template>
+                    <template
+                      v-else-if="isGroupSelected(getSeatGroup(row, seat))"
+                    >
+                      ✓
+                    </template>
+                    <template v-else-if="row.category === 'vip'">
+                      ★
+                    </template>
+                  </span>
                 </span>
 
-                <span class="seat-status">
-                  <template
-                    v-if="isGroupOccupied(getSeatGroup(row, seat))"
-                  >
-                    ×
-                  </template>
-                  <template
-                    v-else-if="isGroupSelected(getSeatGroup(row, seat))"
-                  >
-                    ✓
-                  </template>
-                  <template v-else-if="row.category === 'vip'">
-                    ★
-                  </template>
-                </span>
-              </span>
+                <span class="seat-cushion" aria-hidden="true"></span>
+              </button>
+            </div>
 
-              <span class="seat-cushion" aria-hidden="true"></span>
-            </button>
+            <span class="row-label" aria-hidden="true">
+              {{ row.id }}
+            </span>
           </div>
         </div>
       </div>
@@ -217,27 +234,42 @@ function clearSelection() {
 
     <div class="seat-legend" aria-label="Категории и состояния мест">
       <span class="legend-item">
-        <span class="legend-dot legend-dot--standard" aria-hidden="true"></span>
+        <span
+          class="legend-dot legend-dot--standard"
+          aria-hidden="true"
+        ></span>
         Стандарт · {{ formatPrice(ticketPriceCents) }}
       </span>
 
       <span class="legend-item">
-        <span class="legend-dot legend-dot--double" aria-hidden="true"></span>
+        <span
+          class="legend-dot legend-dot--double"
+          aria-hidden="true"
+        ></span>
         Двойное · {{ formatPrice(ticketPriceCents * 2) }} за двоих
       </span>
 
       <span class="legend-item">
-        <span class="legend-dot legend-dot--vip" aria-hidden="true"></span>
-        VIP · {{ formatPrice(ticketPriceCents) }}
+        <span
+          class="legend-dot legend-dot--vip"
+          aria-hidden="true"
+        ></span>
+        VIP · {{ formatPrice(vipTicketPriceCents) }}
       </span>
 
       <span class="legend-item">
-        <span class="legend-dot legend-dot--selected" aria-hidden="true">✓</span>
+        <span
+          class="legend-dot legend-dot--selected"
+          aria-hidden="true"
+        >✓</span>
         Выбрано
       </span>
 
       <span class="legend-item">
-        <span class="legend-dot legend-dot--occupied" aria-hidden="true">×</span>
+        <span
+          class="legend-dot legend-dot--occupied"
+          aria-hidden="true"
+        >×</span>
         Занято
       </span>
     </div>
@@ -288,30 +320,77 @@ function clearSelection() {
 </template>
 
 <style scoped>
-.screen-label {
-  text-align: center;
-  letter-spacing: 0.2em;
-}
-
-.seats-scroll {
+.hall-scroll {
   overflow-x: auto;
-  padding: 12px 6px;
+  padding: 20px 8px;
 }
 
-.seats-grid {
+.hall {
   width: max-content;
   margin-inline: auto;
 }
 
+/* Экран */
+.screen {
+  position: relative;
+  height: 110px;
+  margin: 0 32px 28px;
+  text-align: center;
+  isolation: isolate;
+}
+
+.screen::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 16px -12px 0;
+  background: linear-gradient(
+    to bottom,
+    rgb(56 189 248 / 18%),
+    rgb(56 189 248 / 5%) 55%,
+    transparent
+  );
+  clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%);
+  pointer-events: none;
+}
+
+.screen-curve {
+  height: 38px;
+  border-top: 4px solid #7dd3fc;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  filter: drop-shadow(0 0 6px rgb(56 189 248 / 45%));
+}
+
+.screen-label {
+  display: block;
+  margin-top: 2px;
+  padding-left: 0.35em;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.35em;
+}
+
+/* Ряды */
+.seats-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 .seat-row {
-  margin-bottom: 20px;
+  display: grid;
+  grid-template-columns: 24px auto 24px;
+  align-items: center;
+  column-gap: 16px;
 }
 
 .row-label {
-  display: block;
-  margin-bottom: 10px;
-  font-size: 14px;
-  font-weight: 600;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  user-select: none;
 }
 
 .row-seats {
@@ -319,6 +398,7 @@ function clearSelection() {
   gap: 10px;
 }
 
+/* Кресла */
 .seat {
   --chair-fill: #e2e8f0;
   --chair-edge: #64748b;
@@ -339,7 +419,6 @@ function clearSelection() {
   transition: transform 150ms ease;
 }
 
-/* Подлокотники */
 .seat::before,
 .seat::after {
   content: '';
@@ -362,7 +441,6 @@ function clearSelection() {
   right: 0;
 }
 
-/* Спинка */
 .seat-back {
   position: absolute;
   inset: 2px 5px auto;
@@ -377,7 +455,6 @@ function clearSelection() {
   box-sizing: border-box;
 }
 
-/* Сиденье */
 .seat-cushion {
   position: absolute;
   z-index: 1;
@@ -413,7 +490,6 @@ function clearSelection() {
   width: 106px;
 }
 
-/* Шов между двумя половинами двойного кресла */
 .seat--double .seat-cushion::after {
   content: '';
   position: absolute;
@@ -452,6 +528,7 @@ function clearSelection() {
   outline-offset: 4px;
 }
 
+/* Легенда */
 .seat-legend {
   display: flex;
   flex-wrap: wrap;
@@ -468,6 +545,7 @@ function clearSelection() {
 
 .legend-dot {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: 18px;
