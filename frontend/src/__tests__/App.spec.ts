@@ -45,10 +45,10 @@ describe('Demo booking', () => {
     const wrapper = mount(SeatPicker, { props: { occupiedSeats: ['A-3'] } })
     const checkout = wrapper.findAll('button').find(button => button.text() === 'Continue to payment')!
     expect(checkout.attributes('disabled')).toBeDefined()
-    await wrapper.get('[aria-label="Row A, seat 1"]').trigger('click')
+    await wrapper.get('[aria-label^="Row A, seat 1,"]').trigger('click')
     await checkout.trigger('click')
     expect(wrapper.emitted('checkout')).toEqual([[['A-1']]])
-    expect(wrapper.get('[aria-label="Row A, seat 3"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[aria-label^="Row A, seat 3,"]').attributes('disabled')).toBeDefined()
   })
 
   it('persists a purchase, clears checkout and reserves seats for its session', () => {

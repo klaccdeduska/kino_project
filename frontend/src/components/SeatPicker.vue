@@ -34,8 +34,8 @@ const rows: HallRow[] = [
 const seatsPerRow = 8
 
 const categoryLabels: Record<SeatCategory, string> = {
-  standard: 'Стандарт',
-  double: 'Двойные',
+  standard: 'Standard',
+  double: 'Double',
   vip: 'VIP',
 }
 
@@ -137,14 +137,14 @@ function seatDescription(row: HallRow, seat: number) {
   const price = formatPrice(calculateTotalCents(group))
 
   const status = isGroupOccupied(group)
-    ? 'занято'
+    ? 'occupied'
     : isGroupSelected(group)
-      ? 'выбрано'
-      : 'свободно'
+      ? 'selected'
+      : 'available'
 
-  const placeLabel = row.category === 'double' ? 'места' : 'место'
+  const placeLabel = row.category === 'double' ? 'seats' : 'seat'
 
-  return `Ряд ${row.id}, ${placeLabel} ${seatLabel(row, seat)}, ${
+  return `Row ${row.id}, ${placeLabel} ${seatLabel(row, seat)}, ${
     categoryLabels[row.category]
   }, ${price}, ${status}`
 }
@@ -155,15 +155,15 @@ function clearSelection() {
 </script>
 
 <template>
-  <section class="seat-picker" aria-label="Выбор мест">
-    <h2>Зал 1</h2>
-    <p>Демонстрационные цены и доступность мест.</p>
+  <section class="seat-picker" aria-label="Seat selection">
+    <h2>Hall 1</h2>
+    <p>Demonstration prices and seat availability.</p>
 
     <div class="hall-scroll">
       <div class="hall">
-        <div class="screen" aria-label="Экран">
+        <div class="screen" aria-label="Screen">
           <div class="screen-curve" aria-hidden="true"></div>
-          <span class="screen-label">ЭКРАН</span>
+          <span class="screen-label">SCREEN</span>
         </div>
 
         <div class="seats-grid">
@@ -172,7 +172,7 @@ function clearSelection() {
             :key="row.id"
             class="seat-row"
             role="group"
-            :aria-label="`Ряд ${row.id}, ${categoryLabels[row.category]}`"
+            :aria-label="`Row ${row.id}, ${categoryLabels[row.category]}`"
           >
             <span class="row-label" aria-hidden="true">
               {{ row.id }}
@@ -232,13 +232,13 @@ function clearSelection() {
       </div>
     </div>
 
-    <div class="seat-legend" aria-label="Категории и состояния мест">
+    <div class="seat-legend" aria-label="Seat categories and availability">
       <span class="legend-item">
         <span
           class="legend-dot legend-dot--standard"
           aria-hidden="true"
         ></span>
-        Стандарт · {{ formatPrice(ticketPriceCents) }}
+        Standard · {{ formatPrice(ticketPriceCents) }}
       </span>
 
       <span class="legend-item">
@@ -246,7 +246,7 @@ function clearSelection() {
           class="legend-dot legend-dot--double"
           aria-hidden="true"
         ></span>
-        Двойное · {{ formatPrice(ticketPriceCents * 2) }} за двоих
+        Double · {{ formatPrice(ticketPriceCents * 2) }} for two people
       </span>
 
       <span class="legend-item">
@@ -262,7 +262,7 @@ function clearSelection() {
           class="legend-dot legend-dot--selected"
           aria-hidden="true"
         >✓</span>
-        Выбрано
+        Selected
       </span>
 
       <span class="legend-item">
@@ -270,17 +270,17 @@ function clearSelection() {
           class="legend-dot legend-dot--occupied"
           aria-hidden="true"
         >×</span>
-        Занято
+        Occupied
       </span>
     </div>
 
     <hr />
 
     <section
-      aria-label="Выбранные места"
+      aria-label="Selected seats"
       aria-live="polite"
     >
-      <h2>Ваш выбор</h2>
+      <h2>Your selection</h2>
 
       <ul v-if="selectedGroups.length">
         <li
@@ -291,11 +291,11 @@ function clearSelection() {
         </li>
       </ul>
 
-      <p v-else>Места пока не выбраны.</p>
+      <p v-else>No seats selected yet.</p>
 
-      <p>Билетов: {{ selectedSeats.length }}</p>
+      <p>Tickets: {{ selectedSeats.length }}</p>
       <p>
-        <strong>Итого: {{ formatPrice(totalCents) }}</strong>
+        <strong>Total: {{ formatPrice(totalCents) }}</strong>
       </p>
     </section>
 
@@ -305,7 +305,7 @@ function clearSelection() {
         :disabled="selectedSeats.length === 0"
         @click="clearSelection"
       >
-        Очистить выбор
+        Clear selection
       </button>
 
       <button
@@ -313,7 +313,7 @@ function clearSelection() {
         :disabled="selectedSeats.length === 0"
         @click="emit('checkout', [...selectedSeats])"
       >
-        Перейти к оплате
+        Continue to payment
       </button>
     </div>
   </section>
@@ -330,7 +330,7 @@ function clearSelection() {
   margin-inline: auto;
 }
 
-/* Экран */
+/* Screen */
 .screen {
   position: relative;
   height: 110px;
@@ -371,7 +371,7 @@ function clearSelection() {
   letter-spacing: 0.35em;
 }
 
-/* Ряды */
+/* Rows */
 .seats-grid {
   display: flex;
   flex-direction: column;
@@ -398,7 +398,7 @@ function clearSelection() {
   gap: 10px;
 }
 
-/* Кресла */
+/* Seats */
 .seat {
   --chair-fill: #e2e8f0;
   --chair-edge: #64748b;
@@ -528,7 +528,7 @@ function clearSelection() {
   outline-offset: 4px;
 }
 
-/* Легенда */
+/* Legend */
 .seat-legend {
   display: flex;
   flex-wrap: wrap;
