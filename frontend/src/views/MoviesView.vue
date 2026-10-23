@@ -135,6 +135,8 @@ onMounted(loadMovies)
 <template>
   <main>
     <h1>BOOBLICKI</h1>
+    <RouterLink to="/login">Sign in</RouterLink>
+    <RouterLink to="/register">Register</RouterLink>
     <h2>Movies</h2>
     <p>Movies loaded from our own database.</p>
 
@@ -247,4 +249,6 @@ onMounted(loadMovies)
   background-color: #222;
   color: #fff;
 }
+
+
 </style>
