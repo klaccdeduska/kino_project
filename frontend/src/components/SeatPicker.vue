@@ -24,11 +24,11 @@ const emit = defineEmits<{
 }>()
 
 const rows: HallRow[] = [
-  { id: 'A', category: 'standard' },
-  { id: 'B', category: 'standard' },
-  { id: 'C', category: 'standard' },
-  { id: 'D', category: 'double' },
   { id: 'E', category: 'vip' },
+  { id: 'D', category: 'double' },
+  { id: 'C', category: 'standard' },
+  { id: 'B', category: 'standard' },
+  { id: 'A', category: 'standard' },
 ]
 
 const seatsPerRow = 8
@@ -64,9 +64,11 @@ const seatCategories = [
 ]
 
 function getGroupCount(row: HallRow) {
-  return row.category === 'double'
-    ? seatsPerRow / 2
-    : seatsPerRow
+  if (row.category === 'double') {
+    return seatsPerRow / 2
+  }
+
+  return seatsPerRow
 }
 
 function getSeatGroup(row: HallRow, seat: number): string[] {
@@ -85,17 +87,18 @@ function isGroupOccupied(seatIds: string[]) {
 }
 
 function normalizeInitialSeats(): string[] {
-  const initialSeats = new Set(props.initialSeats ?? [])
+  const initialSeats = props.initialSeats ?? []
   const result: string[] = []
 
   for (const row of rows) {
     for (let seat = 1; seat <= getGroupCount(row); seat++) {
       const group = getSeatGroup(row, seat)
 
-      if (
-        group.some(id => initialSeats.has(id)) &&
-        !isGroupOccupied(group)
-      ) {
+      const wasSelected = group.some(
+        id => initialSeats.includes(id),
+      )
+
+      if (wasSelected && !isGroupOccupied(group)) {
         result.push(...group)
       }
     }
@@ -106,9 +109,9 @@ function normalizeInitialSeats(): string[] {
 
 const selectedSeats = ref<string[]>(normalizeInitialSeats())
 
-const totalCents = computed(
-  () => calculateTotalCents(selectedSeats.value),
-)
+const totalCents = computed(() => {
+  return calculateTotalCents(selectedSeats.value)
+})
 
 function isGroupSelected(seatIds: string[]) {
   return seatIds.every(id => selectedSeats.value.includes(id))
@@ -122,11 +125,10 @@ const selectedGroups = computed(() => {
       const group = getSeatGroup(row, seat)
 
       if (isGroupSelected(group)) {
+        const category = categoryLabels[row.category]
         const price = formatPrice(calculateTotalCents(group))
 
-        result.push(
-          `${group.join(' + ')} (${categoryLabels[row.category]}) — ${price}`,
-        )
+        result.push(`${group.join(' + ')} (${category}) — ${price}`)
       }
     }
   }
@@ -135,16 +137,20 @@ const selectedGroups = computed(() => {
 })
 
 function toggleGroup(seatIds: string[]) {
-  if (isGroupOccupied(seatIds)) return
+  if (isGroupOccupied(seatIds)) {
+    return
+  }
 
   if (isGroupSelected(seatIds)) {
     selectedSeats.value = selectedSeats.value.filter(
       id => !seatIds.includes(id),
     )
   } else {
-    selectedSeats.value = [
-      ...new Set([...selectedSeats.value, ...seatIds]),
-    ]
+    for (const id of seatIds) {
+      if (!selectedSeats.value.includes(id)) {
+        selectedSeats.value.push(id)
+      }
+    }
   }
 }
 
@@ -159,18 +165,19 @@ function seatLabel(row: HallRow, seat: number) {
 function seatDescription(row: HallRow, seat: number) {
   const group = getSeatGroup(row, seat)
   const price = formatPrice(calculateTotalCents(group))
+  const category = categoryLabels[row.category]
 
-  const status = isGroupOccupied(group)
-    ? 'occupied'
-    : isGroupSelected(group)
-      ? 'selected'
-      : 'available'
+  let status = 'available'
+
+  if (isGroupOccupied(group)) {
+    status = 'occupied'
+  } else if (isGroupSelected(group)) {
+    status = 'selected'
+  }
 
   const placeLabel = row.category === 'double' ? 'seats' : 'seat'
 
-  return `Row ${row.id}, ${placeLabel} ${seatLabel(row, seat)}, ${
-    categoryLabels[row.category]
-  }, ${price}, ${status}`
+  return `Row ${row.id}, ${placeLabel} ${seatLabel(row, seat)}, ${category}, ${price}, ${status}`
 }
 
 function clearSelection() {
@@ -185,11 +192,6 @@ function clearSelection() {
 
     <div class="hall-scroll">
       <div class="hall">
-        <div class="screen" aria-label="Screen">
-          <div class="screen-curve" aria-hidden="true"></div>
-          <span class="screen-label">SCREEN</span>
-        </div>
-
         <div class="seats-grid">
           <div
             v-for="row in rows"
@@ -233,11 +235,13 @@ function clearSelection() {
                     >
                       ×
                     </template>
+
                     <template
                       v-else-if="isGroupSelected(getSeatGroup(row, seat))"
                     >
                       ✓
                     </template>
+
                     <template v-else-if="row.category === 'vip'">
                       ★
                     </template>
@@ -252,6 +256,11 @@ function clearSelection() {
               {{ row.id }}
             </span>
           </div>
+        </div>
+
+        <div class="screen" aria-label="Screen">
+          <div class="screen-curve" aria-hidden="true"></div>
+          <span class="screen-label">SCREEN</span>
         </div>
       </div>
     </div>
@@ -315,6 +324,7 @@ function clearSelection() {
       <p v-else>No seats selected.</p>
 
       <p>Tickets: {{ selectedSeats.length }}</p>
+
       <p>
         <strong>Total: {{ formatPrice(totalCents) }}</strong>
       </p>
@@ -353,43 +363,22 @@ function clearSelection() {
 
 /* Screen */
 .screen {
-  position: relative;
-  height: 110px;
-  margin: 0 32px 28px;
+  margin: 40px 32px 0;
   text-align: center;
-  isolation: isolate;
-}
-
-.screen::after {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: 16px -12px 0;
-  background: linear-gradient(
-    to bottom,
-    rgb(56 189 248 / 18%),
-    rgb(56 189 248 / 5%) 55%,
-    transparent
-  );
-  clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%);
-  pointer-events: none;
 }
 
 .screen-curve {
-  height: 38px;
-  border-top: 4px solid #7dd3fc;
-  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-  filter: drop-shadow(0 0 6px rgb(56 189 248 / 45%));
+  height: 30px;
+  border-bottom: 4px solid #7dd3fc;
+  border-radius: 0 0 50% 50%;
 }
 
 .screen-label {
   display: block;
-  margin-top: 2px;
-  padding-left: 0.35em;
+  margin-top: 12px;
   color: #64748b;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.35em;
+  font-size: 12px;
+  letter-spacing: 4px;
 }
 
 /* Rows */
@@ -527,15 +516,15 @@ function clearSelection() {
 }
 
 .seat--selected {
-  --chair-fill: #15803d;
+  --chair-fill: #7cffaa;
   --chair-edge: #14532d;
-  --chair-text: #ffffff;
+  --chair-text: #000000;
 }
 
 .seat:disabled {
-  --chair-fill: #e5e7eb;
-  --chair-edge: #9ca3af;
-  --chair-text: #4b5563;
+  --chair-fill: #fee2e2;
+  --chair-edge: #dc2626;
+  --chair-text: #991b1b;
 
   cursor: not-allowed;
 }
@@ -591,7 +580,7 @@ function clearSelection() {
   line-height: 1.5;
 }
 
-/* Seat status legend */
+/* Seat status */
 .seat-legend {
   display: flex;
   flex-wrap: wrap;
