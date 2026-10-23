@@ -109,7 +109,10 @@ watch(
 
 <template>
   <main>
-    <RouterLink to="/">Back to movies</RouterLink>
+    <RouterLink to="/" class="back-button">
+    <span aria-hidden="true">←</span>
+    Back to movies
+    </RouterLink>
 
     <h1>Choose your seats</h1>
 
@@ -138,3 +141,32 @@ watch(
     </template>
   </main>
 </template>
+<style scoped>
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: 1px solid #444;
+  border-radius: 10px;
+  background: #111;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 150ms ease;
+}
+
+.back-button:hover {
+  background: #262626;
+}
+
+.back-button:active {
+  background: #000;
+}
+
+.back-button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+</style>
