@@ -27,6 +27,9 @@ interface Session {
   time: string
   hallId: number
   hallName: string
+  language: string
+  subtitles: string | null
+  format: string
 }
 
 const movies = ref<Movie[]>([])
@@ -282,7 +285,9 @@ onMounted(loadMovies)
 
           <div class="session-info">
             <span>{{ formatSessionDate(session.date) }}</span>
-            <span>{{ session.hallName }}</span>
+            <span>{{ session.hallName }} · {{ session.format }}</span>
+            <span>Language: {{ session.language }}</span>
+            <span>Subtitles: {{ session.subtitles ?? 'Not specified' }}</span>
           </div>
 
           <RouterLink class="session-book" :to="{
@@ -489,7 +494,7 @@ a:focus-visible,
   font-size: 26px;
 }
 
-.session-time > span {
+.session-time>span {
   color: #a1a1ad;
   font-size: 14px;
 }

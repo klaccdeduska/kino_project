@@ -30,6 +30,9 @@ interface SessionRow extends RowDataPacket {
   time: string;
   hallId: number;
   hallName: string;
+  language: string;
+  subtitles: string | null;
+  format: string;
 }
 
 const SELECT_MOVIES = `
@@ -72,7 +75,10 @@ const [rows] = await pool.query<SessionRow[]>(
       DATE_FORMAT(s.starts_at, '%Y-%m-%d') AS date,
       DATE_FORMAT(s.starts_at, '%H:%i') AS time,
       h.id AS hallId,
-      h.name AS hallName
+      h.name AS hallName,
+      s.language,
+      s.subtitles,
+      s.format
     FROM sessions AS s
     JOIN halls AS h ON h.id = s.hall_id
     WHERE s.movie_id = ? AND s.id = ?
@@ -101,7 +107,10 @@ const [rows] = await pool.query<SessionRow[]>(
       DATE_FORMAT(s.starts_at, '%Y-%m-%d') AS date,
       DATE_FORMAT(s.starts_at, '%H:%i') AS time,
       h.id AS hallId,
-      h.name AS hallName
+      h.name AS hallName,
+      s.language,
+      s.subtitles,
+      s.format
     FROM sessions AS s
     JOIN halls AS h ON h.id = s.hall_id
     WHERE s.movie_id = ?

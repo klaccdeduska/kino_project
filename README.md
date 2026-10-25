@@ -4,6 +4,27 @@
 
 ## English
 
+### Session language, subtitles and format
+
+Both session endpoints now return `language`, nullable `subtitles`, and `format`. They are displayed in the session list and booking page; missing subtitle information is shown as `Not specified`. Demo values are English, Estonian/Russian subtitles, and 2D.
+
+For an existing database with sessions, check `SHOW COLUMNS FROM sessions;` in MariaDB. If all three columns already exist, skip this import. Otherwise, if all three are missing, run from the project root:
+
+```powershell
+docker compose -f docker-compose.movies.yml cp database/add-session-details.sql db:/tmp/add-session-details.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
+```
+
+Enter your local database password, then run in MariaDB:
+
+```sql
+SOURCE /tmp/add-session-details.sql;
+SELECT id, language, subtitles, format FROM sessions ORDER BY id;
+exit;
+```
+
+Run this migration once: it adds columns and sets demo subtitles for all existing sessions. If only some columns exist, inspect the schema before proceeding. Do not re-import sessions or delete the volume. Restart the backend and check `/api/movies/1/sessions`. For a new database, the updated `sessions.sql` already includes these fields and explicit demo values: follow the first-run order below and skip this migration. `CREATE TABLE IF NOT EXISTS` does not update an existing table.
+
 ### Halls: updating an existing database
 
 Sessions now include `hallId` and `hallName`; both movie and booking pages display the hall. Date buttons, the calendar filter, and shared date/end-time formatting are also available. Seat layouts remain a separate feature.
@@ -240,6 +261,27 @@ docker compose -f docker-compose.movies.yml logs --tail 100 db
 
 ## Eesti
 
+### Seansi keel, subtiitrid ja formaat
+
+Mõlemad seansipäringud tagastavad nüüd väljad `language`, tühiväärtust lubava `subtitles` ja `format`. Need kuvatakse seansiloendis ning kohtade valimise lehel; puuduv subtiitrite teave kuvatakse tekstina `Not specified`. Näidisväärtused on inglise keel, eesti/vene subtiitrid ja 2D.
+
+Olemasolevas andmebaasis kontrolli MariaDB käsuga `SHOW COLUMNS FROM sessions;` veerge. Kui kõik kolm on olemas, jäta import vahele. Kui kõik kolm puuduvad, käivita projekti juurkaustas:
+
+```powershell
+docker compose -f docker-compose.movies.yml cp database/add-session-details.sql db:/tmp/add-session-details.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
+```
+
+Sisesta kohaliku andmebaasi parool ja käivita MariaDB konsoolis:
+
+```sql
+SOURCE /tmp/add-session-details.sql;
+SELECT id, language, subtitles, format FROM sessions ORDER BY id;
+exit;
+```
+
+Käivita migratsioon üks kord: see lisab veerud ja määrab kõigile olemasolevatele seanssidele näidissubtiitrid. Kui ainult osa veerge on olemas, kontrolli enne jätkamist skeemi. Ära impordi seansse uuesti ega kustuta volume'it. Taaskäivita backend ja kontrolli `/api/movies/1/sessions`. Uue andmebaasi jaoks sisaldab uuendatud `sessions.sql` juba neid välju ja näidisväärtusi: järgi allolevat esmakäivituse järjekorda ning jäta see migratsioon vahele. `CREATE TABLE IF NOT EXISTS` ei muuda olemasoleva tabeli struktuuri.
+
 ### Saalid: olemasoleva andmebaasi uuendamine
 
 Seansid sisaldavad nüüd välju `hallId` ja `hallName`; saali kuvatakse filmide ning kohtade valimise lehel. Lisatud on kuupäevanupud, kalendrifilter ja ühine kuupäeva/lõpuaja vormindus. Istekohtade plaan on eraldi arendus.
@@ -475,6 +517,27 @@ docker compose -f docker-compose.movies.yml logs --tail 100 db
 ---
 
 ## Русский
+
+### Язык, субтитры и формат сеанса
+
+Оба адреса API сеансов теперь возвращают `language`, `subtitles` (строка или `null`) и `format`. Данные отображаются в списке сеансов и на странице мест; отсутствие информации о субтитрах показано как `Not specified`. Учебные значения: English, субтитры Estonian/Russian, формат 2D.
+
+Для существующей базы проверьте столбцы через `SHOW COLUMNS FROM sessions;` в MariaDB. Если все три уже есть, импорт пропустите. Если все три отсутствуют, выполните из корня проекта:
+
+```powershell
+docker compose -f docker-compose.movies.yml cp database/add-session-details.sql db:/tmp/add-session-details.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
+```
+
+Введите пароль локальной базы и выполните в MariaDB:
+
+```sql
+SOURCE /tmp/add-session-details.sql;
+SELECT id, language, subtitles, format FROM sessions ORDER BY id;
+exit;
+```
+
+Миграция выполняется один раз: добавляет столбцы и назначает учебные субтитры всем существующим сеансам. Если присутствует только часть столбцов, сначала проверьте схему. Повторно импортировать сеансы и удалять volume не нужно. Перезапустите backend и проверьте `/api/movies/1/sessions`. Для новой базы обновлённый `sessions.sql` уже содержит поля и явные учебные значения: следуйте порядку первого запуска ниже, эту миграцию пропустите. `CREATE TABLE IF NOT EXISTS` не меняет структуру существующей таблицы.
 
 ### Залы: обновление существующей базы
 

@@ -16,6 +16,9 @@ interface Session {
   time: string
   hallId: number
   hallName: string
+  language: string
+  subtitles: string | null
+  format: string
 }
 
 const route = useRoute()
@@ -110,8 +113,8 @@ watch(
 <template>
   <main>
     <RouterLink to="/" class="back-button">
-    <span aria-hidden="true">←</span>
-    Back to movies
+      <span aria-hidden="true">←</span>
+      Back to movies
     </RouterLink>
 
     <h1>Choose your seats</h1>
@@ -123,6 +126,9 @@ watch(
     <template v-else-if="session">
       <p>{{ movieTitle }}</p>
       <p>Hall: {{ session.hallName }}</p>
+      <p>Format: {{ session.format }}</p>
+      <p>Language: {{ session.language }}</p>
+      <p>Subtitles: {{ session.subtitles ?? 'Not specified' }}</p>
       <p>
         Session: {{ formatSessionDate(session.date) }} —
         {{ session.time }}–{{ getSessionEndTime(session.time, movieDuration) }}
