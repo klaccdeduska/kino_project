@@ -41,6 +41,12 @@ const sessionsLoading = ref(false)
 const sessionsError = ref('')
 const selectedDate = ref('')
 
+const sessionsMovie = computed(() => {
+  return movies.value.find(
+    (movie) => movie.id === sessionsMovieId.value
+  )
+})
+
 const filteredMovies = computed(() => {
   const query = search.value.trim().toLowerCase()
 
@@ -166,12 +172,7 @@ onMounted(loadMovies)
 
     <div class="movie-search">
       <label for="movie-search">Search movies:</label>
-      <input
-        id="movie-search"
-        v-model="search"
-        type="search"
-        placeholder="Movie title"
-      />
+      <input id="movie-search" v-model="search" type="search" placeholder="Movie title" />
     </div>
 
     <p v-if="loading" role="status">Loading movies...</p>
@@ -185,52 +186,19 @@ onMounted(loadMovies)
     </p>
 
     <div v-else class="movies-carousel">
-      <button
-        class="carousel-arrow"
-        type="button"
-        aria-label="Предыдущие фильмы"
-        aria-controls="movies-track"
-        :disabled="moviePages.length <= 1"
-        @click="scrollMovies(-1)"
-      >
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
+      <button class="carousel-arrow" type="button" aria-label="Предыдущие фильмы" aria-controls="movies-track"
+        :disabled="moviePages.length <= 1" @click="scrollMovies(-1)">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
           <path d="m15 6-6 6 6 6" />
         </svg>
       </button>
 
-      <div
-        id="movies-track"
-        :key="search"
-        ref="moviesTrack"
-        class="movies-grid"
-        tabindex="0"
-        role="region"
-        aria-label="Афиша фильмов"
-      >
-        <div
-          v-for="(page, pageIndex) in moviePages"
-          :key="pageIndex"
-          class="movies-page"
-        >
-          <article
-            v-for="movie in page"
-            :key="movie.id"
-            class="movie-card"
-          >
-            <img
-              v-if="movie.poster"
-              :src="movie.poster"
-              :alt="movie.title + ' poster'"
-              class="movie-poster"
-            />
+      <div id="movies-track" :key="search" ref="moviesTrack" class="movies-grid" tabindex="0" role="region"
+        aria-label="Афиша фильмов">
+        <div v-for="(page, pageIndex) in moviePages" :key="pageIndex" class="movies-page">
+          <article v-for="movie in page" :key="movie.id" class="movie-card">
+            <img v-if="movie.poster" :src="movie.poster" :alt="movie.title + ' poster'" class="movie-poster" />
 
             <div v-else class="movie-poster poster-placeholder">
               No poster
@@ -242,12 +210,8 @@ onMounted(loadMovies)
             <p>{{ movie.description }}</p>
             <p>{{ movie.releaseYear }} · {{ movie.ageRating }}</p>
 
-            <button
-              class="sessions-toggle"
-              type="button"
-              :aria-expanded="sessionsMovieId === movie.id"
-              @click="toggleSessions(movie.id)"
-            >
+            <button class="sessions-toggle" type="button" :aria-expanded="sessionsMovieId === movie.id"
+              @click="toggleSessions(movie.id)">
               {{
                 sessionsMovieId === movie.id
                   ? 'Hide sessions'
@@ -255,111 +219,82 @@ onMounted(loadMovies)
               }}
             </button>
 
-            <div
-              v-if="sessionsMovieId === movie.id"
-              class="movie-sessions"
-            >
-              <h3>Available sessions</h3>
-
-              <div
-                class="session-dates"
-                role="group"
-                aria-label="Session dates"
-              >
-                <button
-                  v-for="date in availableDates"
-                  :key="date"
-                  type="button"
-                  :class="{
-                    'date-button--selected': selectedDate === date,
-                  }"
-                  :aria-pressed="selectedDate === date"
-                  @click="selectedDate = date"
-                >
-                  {{ formatSessionDate(date) }}
-                </button>
-              </div>
-
-              <label class="session-date-filter">
-                Date:
-                <input v-model="selectedDate" type="date" />
-              </label>
-
-              <button type="button" @click="selectedDate = ''">
-                All dates
-              </button>
-
-              <p v-if="sessionsLoading" role="status">
-                Loading sessions...
-              </p>
-
-              <p v-else-if="sessionsError" role="alert">
-                {{ sessionsError }}
-              </p>
-
-              <p v-else-if="filteredSessions.length === 0">
-                {{
-                  selectedDate
-                    ? 'No sessions available for this date.'
-                    : 'No sessions available.'
-                }}
-              </p>
-
-              <template v-else>
-                <div
-                  v-for="session in filteredSessions"
-                  :key="session.id"
-                  class="session-item"
-                >
-                  <p>
-                    {{ session.hallName }} —
-                    {{ formatSessionDate(session.date) }} —
-                    {{ session.time }}–{{
-                      getSessionEndTime(session.time, movie.duration)
-                    }}
-                    <small
-                      v-if="endsNextDay(session.time, movie.duration)"
-                    >
-                      (next day)
-                    </small>
-                  </p>
-
-                  <RouterLink
-                    :to="{
-                      name: 'booking',
-                      params: { movieId: movie.id },
-                      query: { sessionId: session.id },
-                    }"
-                  >
-                    Choose seats
-                  </RouterLink>
-                </div>
-              </template>
-            </div>
           </article>
         </div>
       </div>
 
-      <button
-        class="carousel-arrow"
-        type="button"
-        aria-label="Следующие фильмы"
-        aria-controls="movies-track"
-        :disabled="moviePages.length <= 1"
-        @click="scrollMovies(1)"
-      >
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
+      <button class="carousel-arrow" type="button" aria-label="Следующие фильмы" aria-controls="movies-track"
+        :disabled="moviePages.length <= 1" @click="scrollMovies(1)">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
           <path d="m9 6 6 6-6 6" />
         </svg>
       </button>
+    </div>
+    <div v-if="sessionsMovie" class="movie-sessions">
+      <h3>Sessions: {{ sessionsMovie.title }}</h3>
+
+      <div class="session-dates" role="group" aria-label="Session dates">
+        <button v-for="date in availableDates" :key="date" type="button" :class="{
+          'date-button--selected': selectedDate === date,
+        }" :aria-pressed="selectedDate === date" @click="selectedDate = date">
+          {{ formatSessionDate(date) }}
+        </button>
+      </div>
+
+      <label class="session-date-filter">
+        Date:
+        <input v-model="selectedDate" type="date" />
+      </label>
+
+      <button type="button" @click="selectedDate = ''">
+        All dates
+      </button>
+
+      <p v-if="sessionsLoading" role="status">
+        Loading sessions...
+      </p>
+
+      <p v-else-if="sessionsError" role="alert">
+        {{ sessionsError }}
+      </p>
+
+      <p v-else-if="filteredSessions.length === 0">
+        {{
+          selectedDate
+            ? 'No sessions available for this date.'
+            : 'No sessions available.'
+        }}
+      </p>
+
+      <template v-else>
+        <div v-for="session in filteredSessions" :key="session.id" class="session-item">
+          <div class="session-time">
+            <strong>{{ session.time }}</strong>
+
+            <span>
+              Until {{ getSessionEndTime(session.time, sessionsMovie.duration) }}
+              <small v-if="endsNextDay(session.time, sessionsMovie.duration)">
+                (next day)
+              </small>
+            </span>
+          </div>
+
+          <div class="session-info">
+            <span>{{ formatSessionDate(session.date) }}</span>
+            <span>{{ session.hallName }}</span>
+          </div>
+
+          <RouterLink class="session-book" :to="{
+            name: 'booking',
+            params: { movieId: sessionsMovie.id },
+            query: { sessionId: session.id },
+          }">
+            Choose seats
+          </RouterLink>
+        </div>
+
+      </template>
     </div>
   </main>
 </template>
@@ -528,9 +463,53 @@ a:focus-visible,
 }
 
 .session-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
   margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #303036;
+  padding: 16px;
+  background: #18181c;
+  border: 1px solid #303036;
+  border-radius: 10px;
+}
+
+.session-time,
+.session-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.session-time {
+  min-width: 150px;
+}
+
+.session-time strong {
+  font-size: 26px;
+}
+
+.session-time > span {
+  color: #a1a1ad;
+  font-size: 14px;
+}
+
+.session-info {
+  flex: 1;
+}
+
+.session-book {
+  padding: 10px 18px;
+  border: 1px solid #50505c;
+  border-radius: 8px;
+  background: #24242b;
+  color: #f2f2f3;
+  text-decoration: none;
+  text-align: center;
+}
+
+.session-book:hover {
+  background: #353540;
 }
 
 .date-button--selected {
