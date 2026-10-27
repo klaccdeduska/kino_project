@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, copyFileSync, readFileSync } from 'node:fs';
+import { existsSync, copyFileSync, readFileSync, appendFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -95,6 +95,18 @@ async function setup() {
   if (!existsSync(envPath)) {
     copyFileSync(path.join(root, 'backend/.env.example'), envPath);
     console.log('Created backend/.env for the default local Compose database.');
+  }
+  const require = createRequire(path.join(root, 'backend/package.json'));
+  const config = require('dotenv').parse(readFileSync(envPath));
+  if (!config.DATABASE_URL) {
+    const user = encodeURIComponent(config.DB_USER || 'kino_user');
+    const password = encodeURIComponent(config.DB_PASSWORD || '');
+    const host = config.DB_HOST || '127.0.0.1';
+    const port = config.DB_PORT || '3308';
+    const name = encodeURIComponent(config.DB_NAME || 'kino');
+    const url = 'mysql://' + user + ':' + password + '@' + host + ':' + port + '/' + name;
+    appendFileSync(envPath, '\nDATABASE_URL=' + JSON.stringify(url) + '\n');
+    console.log('Added missing DATABASE_URL to backend/.env using its DB_* settings.');
   }
   await database(true);
   await run('npm', ['run', 'prisma:generate'], path.join(root, 'backend'));
