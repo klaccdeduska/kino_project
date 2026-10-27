@@ -1,0 +1,11 @@
+{
+  "name": "kino-project",
+  "private": true,
+  "scripts": {
+    "setup": "node scripts/project.mjs setup",
+    "dev": "node scripts/project.mjs dev",
+    "update": "node scripts/project.mjs update",
+    "stop": "node scripts/project.mjs stop",
+    "db:status": "node scripts/project.mjs status"
+  }
+}
