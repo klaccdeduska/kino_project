@@ -7,27 +7,27 @@
 На Windows при ограничении PowerShell используйте `npm.cmd` вместо `npm`.
 
 ```powershell
-npm run setup      # Первый запуск: зависимости, .env, база, Prisma Client
-npm run dev        # База + backend + frontend в одном терминале
+npm.cmd run setup      # Первый запуск: зависимости, .env, база, Prisma Client
+npm.cmd run dev        # База + backend + frontend в одном терминале
 ```
 
 Откройте http://localhost:5173. `Ctrl+C` останавливает backend и frontend.
 Чтобы затем остановить базу, сохранив данные:
 
 ```powershell
-npm run stop
+npm.cmd run stop
 ```
 
 Для обновления остановите `dev`, сохраните изменения коммитом или через stash:
 
 ```powershell
-npm run update    # git pull --ff-only + повторная подготовка окружения
+npm.cmd run update    # git pull --ff-only + повторная подготовка окружения
 ```
 
 `setup` сохраняет существующий `backend/.env`. Если его нет, копирует
 `backend/.env.example` с настройками текущего Compose. При другом пароле
 существующей базы исправьте `.env`. Команды запуска проверяют доступность базы.
-`npm run db:status` показывает состояние контейнера.
+`npm.cmd run db:status` показывает состояние контейнера.
 
 Отсутствующие таблицы movies, halls, sessions и users создаются из SQL по порядку.
 Существующие таблицы не заполняются повторно, даже если они пустые. Перед
