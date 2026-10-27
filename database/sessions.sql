@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   language VARCHAR(50) NOT NULL DEFAULT 'English',
   subtitles VARCHAR(100) NULL,
   format VARCHAR(20) NOT NULL DEFAULT '2D',
+  UNIQUE KEY uq_sessions_hall_start (hall_id, starts_at),
 
   FOREIGN KEY (movie_id) REFERENCES movies(id),
   FOREIGN KEY (hall_id) REFERENCES halls(id)
@@ -16,17 +17,17 @@ CREATE TABLE IF NOT EXISTS sessions (
 INSERT INTO sessions (movie_id, starts_at, hall_id, language, subtitles, format)
 VALUES
   (1, '2026-10-21 14:30:00', 1, 'English', 'Estonian, Russian', '2D'),
-  (1, '2026-10-21 17:00:00', 1, 'English', 'Estonian, Russian', '2D'),
+  (1, '2026-10-21 17:45:00', 1, 'English', 'Estonian, Russian', '2D'),
   (2, '2026-10-21 15:00:00', 2, 'English', 'Estonian, Russian', '2D'),
   (2, '2026-10-22 20:15:00', 2, 'English', 'Estonian, Russian', '2D'),
   (3, '2026-10-22 18:00:00', 1, 'English', 'Estonian, Russian', '2D'),
-  (3, '2026-10-22 20:30:00', 2, 'English', 'Estonian, Russian', '2D'),
+  (3, '2026-10-22 23:20:00', 2, 'English', 'Estonian, Russian', '2D'),
   (4, '2026-10-23 16:45:00', 1, 'English', 'Estonian, Russian', '2D'),
   (4, '2026-10-23 19:15:00', 2, 'English', 'Estonian, Russian', '2D'),
-  (5, '2026-10-23 17:30:00', 1, 'English', 'Estonian, Russian', '2D'),
-  (5, '2026-10-23 20:00:00', 2, 'English', 'Estonian, Russian', '2D'),
+  (5, '2026-10-23 19:30:00', 1, 'English', 'Estonian, Russian', '2D'),
+  (5, '2026-10-23 22:00:00', 2, 'English', 'Estonian, Russian', '2D'),
   (7, '2026-10-24 19:30:00', 1, 'English', 'Estonian, Russian', '2D'),
-  (7, '2026-10-24 22:00:00', 1, 'English', 'Estonian, Russian', '2D'),
+  (7, '2026-10-24 23:00:00', 1, 'English', 'Estonian, Russian', '2D'),
   (8, '2026-10-25 14:00:00', 2, 'English', 'Estonian, Russian', '2D'),
   (8, '2026-10-25 16:30:00', 2, 'English', 'Estonian, Russian', '2D'),
   (9, '2026-10-25 18:15:00', 1, 'English', 'Estonian, Russian', '2D'),

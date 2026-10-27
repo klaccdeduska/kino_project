@@ -1,5 +1,35 @@
 # BOOBLICKI — Cinema Project
 
+## Issue #2: existing database update
+
+New databases get unique hall names and unique (hall_id, starts_at) pairs.
+The demo schedule has no overlaps and allows at least 15 minutes between shows.
+The unique key only prevents identical starts; future session creation must also
+check for overlaps using movie durations.
+
+For an existing demo database, after assigning halls with
+`assign-session-halls.sql`, run from the project root:
+
+```powershell
+docker compose -f docker-compose.movies.yml cp database/fix-demo-schedule.sql db:/tmp/fix-demo-schedule.sql
+docker compose -f docker-compose.movies.yml exec db mariadb -u kino_user -p kino
+```
+
+Then in MariaDB:
+
+```sql
+SOURCE /tmp/fix-demo-schedule.sql;
+```
+
+This adds the constraints and moves only the five original demo showings,
+preserving session IDs. Running it again does not move them again. If an index
+fails because duplicates exist, stop and review those duplicates manually before
+continuing. No records are deleted. Custom schedules need their own overlap
+review. Demo tickets already saved in browser storage retain their old times.
+
+Run `node scripts/test-schedule.mjs` from the project root to verify the seed,
+constraints and upgrade in a temporary database using the running Compose DB.
+
 ## Быстрый запуск из корня проекта
 
 Нужны Node.js 24.12+, Git и запущенный Docker Desktop. Команды ниже управляют
@@ -89,7 +119,7 @@ SELECT s.id, s.hall_id, h.name FROM sessions AS s JOIN halls AS h ON h.id = s.ha
 exit;
 ```
 
-This assigns existing sessions to Hall 1. Do not re-import `sessions.sql` or delete the Docker volume. If halls already exist but `hall_id` is missing, run only `add-session-halls.sql`. Repeating `halls.sql` duplicates halls; repeating the migration fails on the existing column. Restart the backend and check `/api/movies/1/sessions` for `hallId` and `hallName`.
+This assigns existing sessions to Hall 1. Do not re-import `sessions.sql` or delete the Docker volume. If halls already exist but `hall_id` is missing, run only `add-session-halls.sql`. Repeating `halls.sql` leaves existing halls unchanged; repeating the migration fails on the existing column. Restart the backend and check `/api/movies/1/sessions` for `hallId` and `hallName`.
 
 For a **new database**, follow first-run instructions below: movies → halls → sessions → users. Do not run `add-session-halls.sql` on the new schema. The current session seed uses hall IDs 1 and 2: verify them with `SELECT id, name FROM halls;` and adjust the seed if your IDs differ. The SQL files are manual imports; Compose currently initializes only movies. Halls are not yet part of the Prisma schema, so inspect generated migrations before applying schema changes.
 
@@ -168,7 +198,7 @@ SOURCE /tmp/users.sql;
 exit;
 ```
 
-**Import sessions once, only when the table is missing or empty:** importing again creates duplicates. Continue with the next section.
+**Import sessions once, only when the table is missing or empty:** a repeated import is rejected by the unique hall/start constraint. Continue with the next section.
 
 ### 2. Daily startup
 
@@ -346,7 +376,7 @@ SELECT s.id, s.hall_id, h.name FROM sessions AS s JOIN halls AS h ON h.id = s.ha
 exit;
 ```
 
-Olemasolevad seansid määratakse saali Hall 1. Ära impordi uuesti `sessions.sql` ega kustuta Docker volume'it. Kui saalid on juba olemas, kuid `hall_id` puudub, käivita ainult `add-session-halls.sql`. Saalide korduv import tekitab duplikaate; migratsiooni kordamine annab olemasoleva veeru vea. Taaskäivita backend ja kontrolli aadressil `/api/movies/1/sessions` välju `hallId` ja `hallName`.
+Olemasolevad seansid määratakse saali Hall 1. Ära impordi uuesti `sessions.sql` ega kustuta Docker volume'it. Kui saalid on juba olemas, kuid `hall_id` puudub, käivita ainult `add-session-halls.sql`. Saalide korduv import j?tab olemasolevad saalid muutmata; migratsiooni kordamine annab olemasoleva veeru vea. Taaskäivita backend ja kontrolli aadressil `/api/movies/1/sessions` välju `hallId` ja `hallName`.
 
 **Uue andmebaasi** järjekord on allolevas juhendis: filmid → saalid → seansid → kasutajad. Uuel skeemil ära käivita `add-session-halls.sql`. Seansifail kasutab saalide ID-sid 1 ja 2: kontrolli neid käsuga `SELECT id, name FROM halls;` ning vajadusel muuda seansifaili. SQL-failid imporditakse käsitsi; Compose loob praegu ainult filmid. Saale pole veel Prisma skeemis, seega kontrolli genereeritud migratsioone enne skeemimuudatuste rakendamist.
 
@@ -425,7 +455,7 @@ SOURCE /tmp/users.sql;
 exit;
 ```
 
-**Impordi seansid üks kord, ainult puuduva või tühja tabeli korral:** korduv import lisab duplikaate. Jätka järgmise jaotisega.
+**Impordi seansid üks kord, ainult puuduva või tühja tabeli korral:** korduva impordi keelab saali ja algusaja unikaalsuspiirang. Jätka järgmise jaotisega.
 
 ### 2. Igapäevane käivitamine
 
