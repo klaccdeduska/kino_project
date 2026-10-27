@@ -1,3 +1,8 @@
+import Redis from 'ioredis';
+
+const redis = new Redis(
+  process.env.REDIS_URL ?? 'redis://127.0.0.1:6380',
+);
 
 import {
   Controller,
@@ -99,6 +104,13 @@ const [rows] = await pool.query<SessionRow[]>(
   async findSessions(
     @Param('id', ParseIntPipe) movieId: number
   ) {
+    const cacheKey = `sessions:movie:${movieId}`;
+    const cachedSessions = await redis.get(cacheKey);
+
+    if (cachedSessions) {
+      return JSON.parse(cachedSessions) as SessionRow[];
+    }
+
 const [rows] = await pool.query<SessionRow[]>(
   `
     SELECT
@@ -119,6 +131,7 @@ const [rows] = await pool.query<SessionRow[]>(
   [movieId]
 );
 
+    await redis.set(cacheKey, JSON.stringify(rows), 'EX', 60);
     return rows;
   }
 
