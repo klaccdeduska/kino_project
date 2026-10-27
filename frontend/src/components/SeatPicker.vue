@@ -15,6 +15,7 @@ interface HallRow {
 }
 
 const props = defineProps<{
+  hallName: string
   occupiedSeats: string[]
   initialSeats?: string[]
 }>()
@@ -187,7 +188,7 @@ function clearSelection() {
 
 <template>
   <section class="seat-picker" aria-label="Seat selection">
-    <h2>Hall 1</h2>
+    <h2>{{ hallName }}</h2>
     <p>Demonstration prices and seat availability.</p>
 
     <div class="hall-scroll">

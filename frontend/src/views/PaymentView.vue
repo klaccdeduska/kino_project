@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import { formatSessionDate } from '../utils/session'
 import {
   bookingState,
   calculateTotalCents,
@@ -64,7 +65,7 @@ async function pay() {
 
       <h2>{{ draft.movieTitle }}</h2>
 
-      <p>{{ draft.date }} — {{ draft.time }} · Hall 1</p>
+      <p>{{ formatSessionDate(draft.date) }} — {{ draft.time }} · {{ draft.hallName }}</p>
 
       <ul>
         <li v-for="seat in draft.seats" :key="seat">

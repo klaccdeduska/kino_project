@@ -32,7 +32,10 @@ function checkout(seats: string[]) {
   try {
     startCheckout({
       movieId: session.value.movieId, movieTitle: movieTitle.value,
-      sessionId: session.value.id, date: session.value.date, time: session.value.time, seats
+      sessionId: session.value.id,
+      hallId: session.value.hallId,
+      hallName: session.value.hallName,
+      date: session.value.date, time: session.value.time, seats
     })
     void router.push({ name: 'payment' })
   } catch {
@@ -142,6 +145,7 @@ watch(
 
       <p v-if="checkoutError" role="alert">{{ checkoutError }}</p>
       <SeatPicker :key="`${session.movieId}-${session.id}`" :occupied-seats="occupiedSeats(session.id)"
+        :hall-name="session.hallName"
         :initial-seats="bookingState.draft?.sessionId === session.id ? bookingState.draft.seats : []"
         @checkout="checkout" />
     </template>

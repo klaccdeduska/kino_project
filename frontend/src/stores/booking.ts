@@ -4,6 +4,8 @@ export interface Booking {
   movieId: number
   movieTitle: string
   sessionId: number
+  hallId: number
+  hallName: string
   date: string
   time: string
   seats: string[]
@@ -20,7 +22,7 @@ export const vipTicketPriceCents = 1200
 
 export const demoOccupiedSeats = ['A-3', 'B-5', 'C-4']
 
-const storageKey = 'cinema-demo-bookings-v1'
+const storageKey = 'cinema-demo-bookings-v2'
 
 interface State {
   draft: Booking | null

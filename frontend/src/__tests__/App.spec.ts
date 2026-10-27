@@ -15,6 +15,7 @@ beforeEach(() => {
 describe('Demo booking', () => {
   it('navigates from payment to tickets and restores confirmation after remount', async () => {
     startCheckout({ movieId: 1, movieTitle: 'Test movie', sessionId: 10,
+      hallId: 2, hallName: 'Hall 2',
       date: '2026-10-21', time: '18:00', seats: ['A-1', 'A-2'] })
     const router = createRouter({ history: createMemoryHistory(), routes: [
       { path: '/', component: { template: '<p>Movies</p>' } },
@@ -25,15 +26,21 @@ describe('Demo booking', () => {
     await router.push('/payment')
     const wrapper = mount(App, { global: { plugins: [router] } })
     expect(wrapper.text()).toContain('16.00 €')
+    expect(wrapper.text()).toContain('21.10.2026 — 18:00 · Hall 2')
     await wrapper.get('button').trigger('click')
     await flushPromises()
     expect(wrapper.text()).toContain('Tickets purchased!')
     expect(wrapper.findAll('article')).toHaveLength(2)
+    for (const ticket of wrapper.findAll('article')) {
+      expect(ticket.text()).toContain('Hall 2')
+      expect(ticket.text()).toContain('21.10.2026 — 18:00')
+    }
     const confirmationPath = router.currentRoute.value.fullPath
     wrapper.unmount()
     await router.push(confirmationPath)
     const reopened = mount(App, { global: { plugins: [router] } })
     expect(reopened.findAll('article')).toHaveLength(2)
+    expect(reopened.get('article').text()).toContain('Hall 2')
     reopened.unmount()
     await router.push('/payment')
     const emptyPayment = mount(App, { global: { plugins: [router] } })
@@ -42,7 +49,8 @@ describe('Demo booking', () => {
   })
 
   it('requires seats and emits the selection', async () => {
-    const wrapper = mount(SeatPicker, { props: { occupiedSeats: ['A-3'] } })
+    const wrapper = mount(SeatPicker, { props: { hallName: 'Hall 2', occupiedSeats: ['A-3'] } })
+    expect(wrapper.get('h2').text()).toBe('Hall 2')
     const checkout = wrapper.findAll('button').find(button => button.text() === 'Continue to payment')!
     expect(checkout.attributes('disabled')).toBeDefined()
     await wrapper.get('[aria-label^="Row A, seat 1,"]').trigger('click')
@@ -53,6 +61,7 @@ describe('Demo booking', () => {
 
   it('persists a purchase, clears checkout and reserves seats for its session', () => {
     startCheckout({ movieId: 1, movieTitle: 'Test movie', sessionId: 10,
+      hallId: 2, hallName: 'Hall 2',
       date: '2026-10-21', time: '18:00', seats: ['A-1', 'A-2'] })
     const order = purchase()
     expect(order.totalCents).toBe(1600)
@@ -60,7 +69,10 @@ describe('Demo booking', () => {
     expect(bookingState.value.draft).toBeNull()
     expect(occupiedSeats(10)).toContain('A-1')
     expect(occupiedSeats(11)).not.toContain('A-1')
-    expect(JSON.parse(localStorage.getItem('cinema-demo-bookings-v1')!).orders[0].id).toBe(order.id)
+    const savedOrder = JSON.parse(localStorage.getItem('cinema-demo-bookings-v2')!).orders[0]
+    expect(savedOrder.id).toBe(order.id)
+    expect(savedOrder.hallId).toBe(2)
+    expect(savedOrder.hallName).toBe('Hall 2')
     expect(() => purchase()).toThrow()
     startCheckout(order)
     expect(() => purchase()).toThrow('already purchased')

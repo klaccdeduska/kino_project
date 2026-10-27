@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import { formatSessionDate } from '../utils/session'
 import {
   bookingState,
   formatPrice,
@@ -36,10 +37,10 @@ function printTickets() {
       >
         <h2>{{ order.movieTitle }}</h2>
 
-        <p>{{ order.date }} — {{ order.time }}</p>
+        <p>{{ formatSessionDate(order.date) }} — {{ order.time }}</p>
 
         <p>
-          Hall 1
+          {{ order.hallName }}
           · Row {{ seat.split('-')[0] }}
           · Seat {{ seat.split('-')[1] }}
         </p>
