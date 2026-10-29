@@ -171,6 +171,11 @@ onMounted(loadMovies)
 <template>
   <main>
     <h1>BUBLIKI</h1>
+      <nav aria-label="Account">
+        <RouterLink to="/login">Sign in</RouterLink>
+        <span> | </span>
+        <RouterLink to="/register">Sign up</RouterLink>
+      </nav>
     <h2>Movies</h2>
 
     <div class="movie-search">
