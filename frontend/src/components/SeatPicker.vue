@@ -189,7 +189,7 @@ function clearSelection() {
 <template>
   <section class="seat-picker" aria-label="Seat selection">
     <h2>{{ hallName }}</h2>
-    <p>Demonstration prices and seat availability.</p>
+    <p class="hall-hint">Choose a seat on the map. The screen is below.</p>
 
     <div class="hall-scroll">
       <div class="hall">
@@ -313,7 +313,7 @@ function clearSelection() {
 
     <hr />
 
-    <section aria-label="Selected seats" aria-live="polite">
+    <section class="selection-summary" aria-label="Selected seats" aria-live="polite">
       <h2>Your selection</h2>
 
       <ul v-if="selectedGroups.length">
@@ -334,6 +334,7 @@ function clearSelection() {
     <div class="selection-actions">
       <button
         type="button"
+        class="clear-button"
         :disabled="selectedSeats.length === 0"
         @click="clearSelection"
       >
@@ -342,6 +343,7 @@ function clearSelection() {
 
       <button
         type="button"
+        class="checkout-button"
         :disabled="selectedSeats.length === 0"
         @click="emit('checkout', [...selectedSeats])"
       >
@@ -352,6 +354,24 @@ function clearSelection() {
 </template>
 
 <style scoped>
+.seat-picker { padding: 28px; background: #17161c; border: 1px solid #34303e; border-radius: 20px; box-shadow: 0 20px 70px #0003; }
+.seat-picker > h2 { margin: 0 0 8px; font-size: 22px; }
+.hall-hint { margin: 0 0 20px; color: #aaa6b4; font-size: 13px; line-height: 1.6; }
+.hall-scroll { background: radial-gradient(ellipse at 50% 100%, #b6a0ff10, transparent 70%), #111015; border: 1px solid #ffffff08; border-radius: 16px; }
+.selection-summary { padding: 22px; margin-bottom: 20px; border: 1px solid #4b3d62; border-radius: 14px; background: #c4b5fd09; }
+.selection-summary h2 { margin: 0 0 16px; font-size: 18px; }
+.selection-summary p { color: #beb8cb; font-size: 14px; }
+.selection-summary strong { color: #e0d2ff; font-size: 22px; }
+.selection-summary ul { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; list-style: none; }
+.selection-summary li { padding: 10px 12px; color: #e5dcff; background: #b6a0ff15; border: 1px solid #b6a0ff40; border-radius: 9px; font-size: 12px; line-height: 1.6; }
+.selection-actions button { min-height: 48px; padding: 14px 24px; border-radius: 12px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 150ms, transform 150ms; }
+.clear-button { border: 1px solid #57505f; background: transparent; color: #dbd5e5; }
+.clear-button:hover:not(:disabled) { background: #ffffff0a; }
+.checkout-button { flex: 1; border: 1px solid #c4b5fd; background: #c4b5fd; color: #20152f; box-shadow: 0 5px 22px #b6a0ff20; }
+.checkout-button:hover:not(:disabled) { background: #d8cdff; transform: translateY(-1px); }
+.selection-actions button:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+.selection-actions button:focus-visible { outline: 3px solid #dfd4ff; outline-offset: 4px; }
+.seat-picker hr { margin: 24px 0; border: 0; border-top: 1px solid #39323f; }
 .hall-scroll {
   overflow-x: auto;
   padding: 20px 8px;
@@ -377,7 +397,7 @@ function clearSelection() {
 .screen-label {
   display: block;
   margin-top: 12px;
-  color: #64748b;
+  color: #a69bb8;
   font-size: 12px;
   letter-spacing: 4px;
 }
@@ -397,7 +417,7 @@ function clearSelection() {
 }
 
 .row-label {
-  color: #64748b;
+  color: #a69bb8;
   font-size: 13px;
   font-weight: 700;
   text-align: center;
@@ -549,7 +569,8 @@ function clearSelection() {
 
 .category-card {
   padding: 16px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #3e374b;
+  background: #201d28;
   border-radius: 12px;
 }
 
@@ -571,11 +592,13 @@ function clearSelection() {
 }
 
 .category-price span {
+  color: #aaa2b8;
   font-size: 12px;
   font-weight: 400;
 }
 
 .category-description {
+  color: #bcb4cb;
   margin: 0;
   font-size: 14px;
   line-height: 1.5;
@@ -631,9 +654,9 @@ function clearSelection() {
 }
 
 .legend-dot--occupied {
-  border-color: #9ca3af;
-  background: #e5e7eb;
-  color: #4b5563;
+  border-color: #dc2626;
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .selection-actions {
@@ -643,6 +666,8 @@ function clearSelection() {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .selection-actions button { transition: none; }
+  .checkout-button:hover:not(:disabled) { transform: none; }
   .seat {
     transition: none;
   }
@@ -650,5 +675,12 @@ function clearSelection() {
   .seat:not(:disabled):hover {
     transform: none;
   }
+}
+@media (max-width: 600px) {
+  .seat-picker { padding: 18px 12px; }
+  .seat-categories { grid-template-columns: 1fr; }
+  .category-card { padding: 14px; }
+  .selection-summary { padding: 16px; }
+  .selection-actions { flex-direction: column-reverse; }
 }
 </style>
