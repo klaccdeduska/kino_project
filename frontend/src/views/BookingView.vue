@@ -63,7 +63,7 @@ async function loadSession() {
     }
 
     const response = await fetch(
-      `http://localhost:3000/api/movies/${encodeURIComponent(movieId)}/sessions/${encodeURIComponent(sessionId)}`
+      `/api/movies/${encodeURIComponent(movieId)}/sessions/${encodeURIComponent(sessionId)}`
     )
 
     if (!response.ok) {
@@ -75,7 +75,7 @@ async function loadSession() {
     }
 
     const data: Session = await response.json()
-    const movieResponse = await fetch(`http://localhost:3000/api/movies/${encodeURIComponent(movieId)}`)
+    const movieResponse = await fetch(`/api/movies/${encodeURIComponent(movieId)}`)
     if (!movieResponse.ok) throw new Error('Could not load the movie.')
     const movie: { title: string; duration: number } =
       await movieResponse.json()

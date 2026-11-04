@@ -12,6 +12,18 @@ Bookings are saved in this browser only; demo payments do not charge money.
 Fresh demo sessions start tomorrow and cover seven days, in Europe/Tallinn local time.
 Started sessions are unavailable, including at payment. Existing schedules are preserved.
 
+To add a fresh week of demo sessions to an existing local database:
+
+```powershell
+npm.cmd run db:refresh-sessions
+```
+
+The command adds shows for tomorrow through the following seven days. It preserves
+old sessions and ticket IDs, skips existing or overlapping shows, and can be rerun.
+Run it again when the demo schedule expires. On the hosted site, run it from the
+server checkout that connects to that database, then reload the movie page.
+The server must proxy `/api` to the NestJS backend.
+
 ### Requirements and command conventions
 
 Install **Node.js 24.12+**, **Git** and **Docker Desktop**. Start Docker Desktop.
@@ -267,6 +279,10 @@ Invoke-RestMethod http://localhost:3000/api/movies/1/sessions
 Redise konteiner, istekohtade valik, näidismakse ja prinditavad piletid.
 Broneeringud salvestatakse ainult sellesse brauserisse. Päris raha ei võeta.
 
+Demo seansside uuendamine: `npm.cmd run db:refresh-sessions` lisab seansid järgmiseks
+seitsmeks päevaks alates homsest. Olemasolevad seansid säilivad, kattuvad ajad jäetakse
+vahele. Avaliku saidi puhul käivita käsk serveri projektikaustas.
+
 ### Nõuded ja käskude kasutamine
 
 Vaja on **Node.js 24.12+**, **Giti** ja töötavat **Docker Desktopi**.
@@ -520,6 +536,11 @@ Invoke-RestMethod http://localhost:3000/api/movies/1/sessions
 Учебный кинотеатр: Vue 3 + TypeScript, API на NestJS, MariaDB 11,
 Контейнер Redis, выбор мест, демооплата и печать билетов.
 Бронирования сохраняются только в этом браузере. Настоящие деньги не списываются.
+
+Обновление деморасписания: `npm.cmd run db:refresh-sessions` добавляет сеансы на
+семь дней начиная с завтрашнего дня. Старые сеансы сохраняются, дубли и пересечения
+пропускаются. Для опубликованного сайта выполните команду в папке проекта на сервере,
+затем обновите страницу фильмов. Сервер должен проксировать `/api` в NestJS backend.
 
 ### Требования и обозначения
 

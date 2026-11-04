@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
+import { refreshSessions } from './refresh-sessions.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const windows = process.platform === 'win32';
@@ -35,7 +36,7 @@ function environment() {
   return { require, config: { ...config, ...process.env } };
 }
 
-async function database(prepare = false) {
+async function database(prepare = false, refresh = false) {
   const { require, config } = environment();
   if (!['127.0.0.1', 'localhost'].includes(config.DB_HOST || '127.0.0.1') ||
       Number(config.DB_PORT || 3308) !== 3308 || (config.DB_NAME || 'kino') !== 'kino') {
@@ -89,6 +90,10 @@ async function database(prepare = false) {
     const [columns] = await connection.query('SHOW COLUMNS FROM sessions');
     const missing = ['hall_id', 'language', 'subtitles', 'format'].filter(name => !columns.some(column => column.Field === name));
     if (missing.length) throw new Error(`Database needs a manual update: sessions.${missing.join(', ')}. Follow the existing-database migrations in README.md, then rerun this command.`);
+    if (refresh) {
+      const result = await refreshSessions(connection);
+      console.log(`Demo schedule: added ${result.added} upcoming sessions; skipped ${result.skipped} existing/conflicting or unavailable slots.`);
+    }
     console.log('Database is ready.');
   } finally {
     await connection.end();
@@ -154,6 +159,7 @@ try {
   switch (command) {
     case 'setup': await setup(); break;
     case 'dev': await dev(); break;
+    case 'refresh-sessions': await database(false, true); break;
     case 'update': {
       const status = spawnSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' });
       if (status.status !== 0) throw new Error('Could not check Git status.');
@@ -165,7 +171,7 @@ try {
     case 'stop': await run('docker', [...compose, 'stop']); break;
     case 'status': await run('docker', [...compose, 'ps']); break;
     default:
-      console.log('Commands: npm run setup | dev | update | stop | db:status');
+      console.log('Commands: npm run setup | dev | update | stop | db:status | db:refresh-sessions');
       if (command && !['--help', '-h'].includes(command)) process.exitCode = 1;
   }
 } catch (error) {

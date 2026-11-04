@@ -111,7 +111,7 @@ async function loadMovies() {
   error.value = ''
 
   try {
-    const response = await fetch('http://localhost:3000/api/movies')
+    const response = await fetch('/api/movies')
 
     if (!response.ok) {
       throw new Error('Failed to load movies')
@@ -140,7 +140,7 @@ async function toggleSessions(movieId: number) {
 
   try {
     const response = await fetch(
-      `http://localhost:3000/api/movies/${movieId}/sessions`,
+      `/api/movies/${movieId}/sessions`,
     )
 
     if (!response.ok) {

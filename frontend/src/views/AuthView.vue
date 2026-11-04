@@ -17,7 +17,7 @@ async function submit() {
 
     try {
         const action = isRegister.value ? 'register' : 'login'
-        const response = await fetch(`http://localhost:3000/api/auth/${action}`, {
+        const response = await fetch(`/api/auth/${action}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
