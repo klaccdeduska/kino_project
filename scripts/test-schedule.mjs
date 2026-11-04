@@ -25,9 +25,13 @@ JOIN sessions b ON a.id < b.id AND a.hall_id = b.hall_id
 JOIN movies mb ON mb.id = b.movie_id
 WHERE a.starts_at < DATE_ADD(b.starts_at, INTERVAL mb.duration MINUTE)
 AND b.starts_at < DATE_ADD(a.starts_at, INTERVAL ma.duration MINUTE);`;
-const seed = file('sessions');
+const relativeSeed = file('sessions');
+const seed = relativeSeed.replace('CURDATE() + INTERVAL 1 DAY', "DATE('2026-10-21')").replace(/TIMESTAMP\(@demo_start \+ INTERVAL (\d+) DAY, '([\d:]+)'\)/g, (_, day, time) => `'2026-10-${21 + Number(day)} ${time}'`);
 try {
-  sql(file('movies') + file('halls') + seed);
+  sql(file('movies') + file('halls') + relativeSeed);
+  assert.equal(sql(`SELECT COUNT(*) FROM ${database}.sessions WHERE starts_at <= NOW();`), '0');
+  sql(`USE ${database}; DROP TABLE sessions;`);
+  sql(seed);
   assert.equal(sql(`USE ${database}; ${overlaps}`), '0');
   sql(file('halls'));
   assert.equal(sql(`SELECT COUNT(*) FROM ${database}.halls;`), '2');

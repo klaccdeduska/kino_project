@@ -1,9 +1,3 @@
-import Redis from 'ioredis';
-
-const redis = new Redis(
-  process.env.REDIS_URL ?? 'redis://127.0.0.1:6380',
-);
-
 import {
   Controller,
   Get,
@@ -57,12 +51,9 @@ const SELECT_MOVIES = `
 
 @Controller('api/movies')
 export class MoviesController {
-
   @Get()
   async findAll() {
-    const [rows] = await pool.query<MovieRow[]>(
-      `${SELECT_MOVIES} ORDER BY id`
-    );
+    const [rows] = await pool.query<MovieRow[]>(`${SELECT_MOVIES} ORDER BY id`);
 
     return rows;
   }
@@ -70,10 +61,10 @@ export class MoviesController {
   @Get(':id/sessions/:sessionId')
   async findSession(
     @Param('id', ParseIntPipe) movieId: number,
-    @Param('sessionId', ParseIntPipe) sessionId: number
+    @Param('sessionId', ParseIntPipe) sessionId: number,
   ) {
-const [rows] = await pool.query<SessionRow[]>(
-  `
+    const [rows] = await pool.query<SessionRow[]>(
+      `
     SELECT
       s.id,
       s.movie_id AS movieId,
@@ -86,10 +77,10 @@ const [rows] = await pool.query<SessionRow[]>(
       s.format
     FROM sessions AS s
     JOIN halls AS h ON h.id = s.hall_id
-    WHERE s.movie_id = ? AND s.id = ?
+    WHERE s.movie_id = ? AND s.id = ? AND s.starts_at > NOW()
   `,
-  [movieId, sessionId]
-);
+      [movieId, sessionId],
+    );
 
     const session = rows[0];
 
@@ -101,18 +92,9 @@ const [rows] = await pool.query<SessionRow[]>(
   }
 
   @Get(':id/sessions')
-  async findSessions(
-    @Param('id', ParseIntPipe) movieId: number
-  ) {
-    const cacheKey = `sessions:movie:${movieId}`;
-    const cachedSessions = await redis.get(cacheKey);
-
-    if (cachedSessions) {
-      return JSON.parse(cachedSessions) as SessionRow[];
-    }
-
-const [rows] = await pool.query<SessionRow[]>(
-  `
+  async findSessions(@Param('id', ParseIntPipe) movieId: number) {
+    const [rows] = await pool.query<SessionRow[]>(
+      `
     SELECT
       s.id,
       s.movie_id AS movieId,
@@ -125,23 +107,20 @@ const [rows] = await pool.query<SessionRow[]>(
       s.format
     FROM sessions AS s
     JOIN halls AS h ON h.id = s.hall_id
-    WHERE s.movie_id = ?
+    WHERE s.movie_id = ? AND s.starts_at > NOW()
     ORDER BY s.starts_at, s.id
   `,
-  [movieId]
-);
+      [movieId],
+    );
 
-    await redis.set(cacheKey, JSON.stringify(rows), 'EX', 60);
     return rows;
   }
 
   @Get(':id')
-  async findOne(
-    @Param('id', ParseIntPipe) id: number
-  ) {
+  async findOne(@Param('id', ParseIntPipe) id: number) {
     const [rows] = await pool.query<MovieRow[]>(
       `${SELECT_MOVIES} WHERE id = ?`,
-      [id]
+      [id],
     );
 
     if (rows.length === 0) {

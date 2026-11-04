@@ -6,8 +6,11 @@
 ## English
 
 A student cinema project: Vue 3 + TypeScript frontend, NestJS API, MariaDB 11,
-Redis session cache, demo seat selection, payment and printable tickets.
+Redis container, demo seat selection, payment and printable tickets.
 Bookings are saved in this browser only; demo payments do not charge money.
+
+Fresh demo sessions start tomorrow and cover seven days, in Europe/Tallinn local time.
+Started sessions are unavailable, including at payment. Existing schedules are preserved.
 
 ### Requirements and command conventions
 
@@ -92,11 +95,13 @@ The API uses `DB_*`; Prisma uses `DATABASE_URL`. If an older `.env` has no
 ```dotenv
 DATABASE_URL="mysql://kino_user:change_me@127.0.0.1:3308/kino"
 ```
- Redis defaults to
-`redis://127.0.0.1:6380`; override with `REDIS_URL` in `backend/.env` if necessary.
+The Redis container remains available at `redis://127.0.0.1:6380`.
+Session availability is read directly from MariaDB so started sessions cannot stay cached.
 
-Compose imports **only movies** automatically on a fresh volume. For a fresh
-manual installation, copy the remaining SQL files:
+Compose imports **movies, halls, sessions, users and reviews** automatically on a
+fresh volume. No manual SQL import is needed. On an existing volume, `npm.cmd run
+setup` creates missing tables and preserves existing data. The following manual
+commands are only a recovery option for an older volume with missing tables:
 
 ```powershell
 docker compose -f docker-compose.movies.yml cp database/halls.sql db:/tmp/halls.sql
@@ -191,16 +196,18 @@ manually. Do not run hall assignment on a custom schedule: it rewrites assignmen
 The schedule fix preserves IDs and moves five original demo showings. Its unique
 indexes reject existing duplicates; review those manually. Never delete the Docker
 volume to apply an upgrade. Already saved browser tickets retain their old times.
-After SQL changes, restart the backend; cached session lists expire after 60 seconds.
+After SQL changes, restart the backend; session availability is queried directly without cached results.
 
 Prisma currently covers only movies/reviews; the running API uses `mysql2`.
-Normal setup does not need reviews. For the optional Prisma exercise with the
+Setup creates reviews from its checked-in Prisma migration. For the optional Prisma exercise with the
 existing `movies` table and **no Prisma migration history**:
 
 ```powershell
 # Run this baseline command once, only after checking the existing movies schema:
 cd backend
 npx.cmd prisma migrate resolve --applied 0_init
+# If reviews already exists, baseline it too before deploy:
+npx.cmd prisma migrate resolve --applied 1_add_reviews
 npm.cmd run prisma:deploy
 npm.cmd run prisma:generate
 npm.cmd run prisma:seed
@@ -244,7 +251,7 @@ Invoke-RestMethod http://localhost:3000/api/movies/1/sessions
 | Docker connection error | Start Docker Desktop and retry `docker version` |
 | Access denied from MariaDB | Match `.env` to the password of the existing volume; editing Compose does not change that password |
 | Port already in use | Stop the previous server/container using 3000, 5173, 3308 or 6380; keep frontend port 5173 because CORS uses it |
-| Redis connection error / sessions fail | Run `docker compose -f docker-compose.movies.yml up -d redis`, then check `redis-cli ping` |
+| No available sessions | Past shows are hidden; import future sessions into an existing demo database without deleting its volume |
 | Missing table/column | Follow the conditional SQL steps above; rerunning `setup` does not migrate existing tables |
 | Update says local changes exist | Commit/stash your work first; this is an intentional protection |
 | No upcoming demo dates | The seed has fixed dates, 21–27 October 2026; refreshing those dates is separate work |
@@ -257,7 +264,7 @@ Invoke-RestMethod http://localhost:3000/api/movies/1/sessions
 ## Eesti
 
 Õppeprojekt: Vue 3 ja TypeScripti kasutajaliides, NestJS API, MariaDB 11,
-Redis seansside vahemälu, istekohtade valik, näidismakse ja prinditavad piletid.
+Redise konteiner, istekohtade valik, näidismakse ja prinditavad piletid.
 Broneeringud salvestatakse ainult sellesse brauserisse. Päris raha ei võeta.
 
 ### Nõuded ja käskude kasutamine
@@ -344,11 +351,12 @@ Prisma Clienti genereerimist, kasutades oma tegelikke ?hendusandmeid:
 DATABASE_URL="mysql://kino_user:change_me@127.0.0.1:3308/kino"
 ```
 
-Redise vaikeaadress on `redis://127.0.0.1:6380`; vajadusel määra
-samas `.env` failis `REDIS_URL`.
+Redise konteiner on aadressil `redis://127.0.0.1:6380`.
+Seansside saadavust loetakse otse MariaDB-st.
 
-Compose impordib uue volume'i puhul automaatselt **ainult filmid**.
-Uue käsitsi paigalduse jaoks kopeeri ülejäänud SQL-failid:
+Uue volume'i puhul impordib Compose automaatselt **movies, halls, sessions, users ja reviews**.
+Käsitsi importi pole vaja. Järgmised käsud on ainult vanema volume'i puuduvate tabelite taastamiseks.
+Puuduvate tabelitega vanema volume'i jaoks kopeeri vajalikud SQL-failid:
 
 ```powershell
 docker compose -f docker-compose.movies.yml cp database/halls.sql db:/tmp/halls.sql
@@ -443,16 +451,17 @@ käivitatakse üks kord. Kui osa veerge on juba olemas, korrasta skeem käsitsi.
 Kava parandus säilitab ID-d ja nihutab viit algset näidisseanssi. Unikaalsed
 indeksid lükkavad duplikaadid tagasi; need tuleb käsitsi üle vaadata. Uuendamiseks
 ära kustuta Docker volume'it. Brauseris varem salvestatud piletitel jääb vana aeg.
-Pärast SQL-muudatusi taaskäivita backend; seansside vahemälu aegub 60 sekundiga.
+Seansside saadavust kontrollitakse otse andmebaasist ilma vahemäluta.
 
 Prisma hõlmab praegu ainult filme/arvustusi; API kasutab `mysql2`.
-Tavakäivituseks pole arvustuste tabelit vaja. Valikuline Prisma harjutus olemasoleva
+Setup loob ka reviews-tabeli. Valikuline Prisma harjutus olemasoleva
 `movies` tabeliga, kui **Prisma migratsiooniajalugu veel puudub**:
 
 ```powershell
 # Baseline ainult üks kord ja pärast movies tabeli skeemi kontrollimist:
 cd backend
 npx.cmd prisma migrate resolve --applied 0_init
+npx.cmd prisma migrate resolve --applied 1_add_reviews
 npm.cmd run prisma:deploy
 npm.cmd run prisma:generate
 npm.cmd run prisma:seed
@@ -496,7 +505,7 @@ Invoke-RestMethod http://localhost:3000/api/movies/1/sessions
 | Dockeriga ei saa ühendust | Käivita Docker Desktop ja korda `docker version` |
 | MariaDB vastab Access denied | Kontrolli olemasoleva volume'i parooli ja `.env` faili; Compose'i muutmine parooli ei muuda |
 | Port on kasutusel | Peata varasem protsess pordil 3000, 5173, 3308 või 6380; frontendi port peab CORS-i tõttu jääma 5173 |
-| Redis või seansid ei tööta | `docker compose -f docker-compose.movies.yml up -d redis`, seejärel `redis-cli ping` |
+| Saadaolevaid seansse pole | Möödunud seansid on peidetud; lisa tulevased seansid olemasolevat volume'i kustutamata |
 | Tabel/veerg puudub | Kasuta ülalolevaid tingimuslikke SQL-samme; `setup` ei migreeri olemasolevaid tabeleid |
 | Update leiab kohalikke muudatusi | Tee commit või stash; see on tahtlik kaitse |
 | Tulevasi näidiskuupäevi pole | Näidiskava kuupäevad on 21.–27.10.2026; nende uuendamine on eraldi töö |
@@ -509,7 +518,7 @@ Invoke-RestMethod http://localhost:3000/api/movies/1/sessions
 ## Русский
 
 Учебный кинотеатр: Vue 3 + TypeScript, API на NestJS, MariaDB 11,
-Redis для кеша сеансов, выбор мест, демооплата и печать билетов.
+Контейнер Redis, выбор мест, демооплата и печать билетов.
 Бронирования сохраняются только в этом браузере. Настоящие деньги не списываются.
 
 ### Требования и обозначения
@@ -596,11 +605,12 @@ API использует `DB_*`, Prisma — `DATABASE_URL`. Если в стар
 DATABASE_URL="mysql://kino_user:change_me@127.0.0.1:3308/kino"
 ```
 
-Redis по умолчанию доступен по
-`redis://127.0.0.1:6380`; при необходимости задайте `REDIS_URL` в том же `.env`.
+Контейнер Redis доступен по `redis://127.0.0.1:6380`.
+Доступность сеансов проверяется напрямую в MariaDB без кеша.
 
-На новом volume Compose автоматически импортирует **только фильмы**.
-Для новой базы при ручной установке скопируйте остальные SQL-файлы:
+На новом volume Compose автоматически создаёт **movies, halls, sessions, users и reviews**.
+Ручной импорт не нужен. Следующие команды нужны только для восстановления отсутствующих таблиц в старом volume.
+Для старого volume с отсутствующими таблицами скопируйте нужные SQL-файлы:
 
 ```powershell
 docker compose -f docker-compose.movies.yml cp database/halls.sql db:/tmp/halls.sql
@@ -696,17 +706,17 @@ exit;
 назначения. Исправление расписания сохраняет ID и переносит пять исходных сеансов.
 Уникальные индексы отклоняют существующие дубликаты — разберите их вручную.
 Не удаляйте Docker volume ради обновления. У ранее сохранённых в браузере билетов
-останется старое время. После SQL-изменений перезапустите backend; кеш списка
-сеансов истекает через 60 секунд.
+останется старое время. Доступность сеансов проверяется напрямую в базе без кеша.
 
 Prisma пока описывает только фильмы/отзывы; API использует `mysql2`.
-Для обычного запуска отзывы не нужны. Необязательная практика Prisma для базы
+Setup также создаёт reviews из существующей Prisma-миграции. Необязательная практика Prisma для базы
 с существующей таблицей `movies` и **без истории Prisma-миграций**:
 
 ```powershell
 # Baseline выполняется один раз, после проверки схемы существующей movies:
 cd backend
 npx.cmd prisma migrate resolve --applied 0_init
+npx.cmd prisma migrate resolve --applied 1_add_reviews
 npm.cmd run prisma:deploy
 npm.cmd run prisma:generate
 npm.cmd run prisma:seed
@@ -750,7 +760,7 @@ Invoke-RestMethod http://localhost:3000/api/movies/1/sessions
 | Нет подключения к Docker | Запустите Docker Desktop, повторите `docker version` |
 | MariaDB отвечает Access denied | Сверьте `.env` с паролем существующего volume; изменение Compose не меняет этот пароль |
 | Порт занят | Остановите предыдущий процесс на 3000, 5173, 3308 или 6380; frontend должен остаться на 5173 из-за настройки CORS |
-| Ошибка Redis / не загружаются сеансы | `docker compose -f docker-compose.movies.yml up -d redis`, затем проверка `redis-cli ping` |
+| Нет доступных сеансов | Прошедшие показы скрыты; добавьте будущие сеансы в существующую демобазу, сохранив volume |
 | Нет таблицы/столбца | Используйте условные SQL-шаги выше; `setup` не мигрирует существующие таблицы |
 | Update сообщает о локальных изменениях | Сначала commit/stash; это предусмотренная защита |
 | Нет будущих учебных дат | Даты сеансов фиксированы: 21–27 октября 2026 года; их обновление — отдельная задача |

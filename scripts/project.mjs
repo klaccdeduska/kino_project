@@ -78,6 +78,13 @@ async function database(prepare = false) {
         console.log(`Creating missing table: ${table}`);
         await connection.query(readFileSync(path.join(root, `database/${table}.sql`), 'utf8'));
       }
+      const [reviews] = await connection.execute(
+        'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', ['reviews'],
+      );
+      if (!reviews.length) {
+        await connection.query(readFileSync(path.join(root, 'backend/prisma/migrations/1_add_reviews/migration.sql'), 'utf8'));
+        console.log('Created missing reviews table from the Prisma migration.');
+      }
     }
     const [columns] = await connection.query('SHOW COLUMNS FROM sessions');
     const missing = ['hall_id', 'language', 'subtitles', 'format'].filter(name => !columns.some(column => column.Field === name));

@@ -13,10 +13,19 @@ services:
       MARIADB_DATABASE: kino
       MARIADB_USER: kino_user
       MARIADB_PASSWORD: change_me
+      TZ: Europe/Tallinn
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      retries: 20
     ports:
       - '3308:3306'
     volumes:
       - kino_movies_data:/var/lib/mysql
       - ./database/movies.sql:/docker-entrypoint-initdb.d/01-movies.sql:ro
+      - ./database/halls.sql:/docker-entrypoint-initdb.d/02-halls.sql:ro
+      - ./database/sessions.sql:/docker-entrypoint-initdb.d/03-sessions.sql:ro
+      - ./database/users.sql:/docker-entrypoint-initdb.d/04-users.sql:ro
+      - ./backend/prisma/migrations/1_add_reviews/migration.sql:/docker-entrypoint-initdb.d/05-reviews.sql:ro
 volumes:
   kino_movies_data:

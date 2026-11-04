@@ -1,4 +1,4 @@
-import { beforeEach, describe, it, expect } from 'vitest'
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import App from '../App.vue'
@@ -7,7 +7,10 @@ import TicketsView from '../views/TicketsView.vue'
 import SeatPicker from '../components/SeatPicker.vue'
 import { bookingState, startCheckout, purchase, occupiedSeats } from '../stores/booking'
 
+afterEach(() => vi.unstubAllGlobals())
+
 beforeEach(() => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }))
   localStorage.clear()
   bookingState.value = { draft: null, orders: [] }
 })
@@ -46,6 +49,24 @@ describe('Demo booking', () => {
     const emptyPayment = mount(App, { global: { plugins: [router] } })
     expect(emptyPayment.text()).toContain('No seats selected')
     emptyPayment.unmount()
+  })
+
+  it('refuses payment when the session has started', async () => {
+    startCheckout({ movieId: 1, movieTitle: 'Test movie', sessionId: 10,
+      hallId: 2, hallName: 'Hall 2', date: '2026-10-21', time: '18:00', seats: ['A-1'] })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }))
+    const router = createRouter({ history: createMemoryHistory(), routes: [
+      { path: '/payment', component: PaymentView },
+      { path: '/booking/:movieId', name: 'booking', component: { template: '<p>Seats</p>' } },
+    ] })
+    await router.push('/payment')
+    const wrapper = mount(PaymentView, { global: { plugins: [router] } })
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[role="alert"]').text()).toContain('Session is no longer available')
+    expect(bookingState.value.orders).toHaveLength(0)
+    expect(bookingState.value.draft).not.toBeNull()
+    wrapper.unmount()
   })
 
   it('requires seats and emits the selection', async () => {

@@ -28,6 +28,15 @@ async function pay() {
   error.value = ''
 
   try {
+    const selection = draft.value
+    if (!selection) throw new Error('Please choose your seats first.')
+    const response = await fetch(`/api/movies/${selection.movieId}/sessions/${selection.sessionId}`)
+    if (!response.ok) {
+      throw new Error(response.status === 404
+        ? 'Session is no longer available. Please choose another session.'
+        : 'Could not verify the session. Please try again.')
+    }
+    if (draft.value !== selection) throw new Error('Your selection changed. Please try again.')
     const order = purchase()
 
     await router.replace({
