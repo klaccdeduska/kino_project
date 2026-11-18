@@ -3,6 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import App from '../App.vue'
 import PaymentView from '../views/PaymentView.vue'
+import BookingView from '../views/BookingView.vue'
 import TicketsView from '../views/TicketsView.vue'
 import SeatPicker from '../components/SeatPicker.vue'
 import { bookingState, startCheckout, purchase, occupiedSeats } from '../stores/booking'
@@ -92,6 +93,36 @@ describe('Demo booking', () => {
       expect(wrapper.get('button').attributes('disabled')).toBeDefined()
       expect(() => purchase()).toThrow('Checkout time expired')
       expect(bookingState.value.orders).toHaveLength(0)
+    } finally {
+      wrapper.unmount()
+      vi.useRealTimers()
+    }
+  })
+
+  it('starts the timer on seat selection and carries the remaining time to payment', async () => {
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({
+        id: 10, movieId: 1, hallId: 2, hallName: 'Hall 2',
+        date: '2026-11-20', time: '18:00', format: '2D', language: 'English', subtitles: null,
+      }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ title: 'Test movie', duration: 100 }) }))
+    const router = createRouter({ history: createMemoryHistory(), routes: [
+      { path: '/booking/:movieId', name: 'booking', component: BookingView },
+      { path: '/payment', name: 'payment', component: PaymentView },
+    ] })
+    await router.push('/booking/1?sessionId=10')
+    vi.useFakeTimers()
+    const wrapper = mount(App, { global: { plugins: [router] } })
+    try {
+      await flushPromises()
+      expect(wrapper.get('[role="timer"]').text()).toContain('10:00')
+      await vi.advanceTimersByTimeAsync(60_000)
+      await wrapper.get('[aria-label^="Row A, seat 1,"]').trigger('click')
+      const checkout = wrapper.findAll('button').find(button => button.text() === 'Continue to payment')!
+      await checkout.trigger('click')
+      await flushPromises()
+      expect(router.currentRoute.value.name).toBe('payment')
+      expect(wrapper.get('[role="timer"]').text()).toContain('9:00')
     } finally {
       wrapper.unmount()
       vi.useRealTimers()

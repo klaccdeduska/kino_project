@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import SeatPicker from '../components/SeatPicker.vue'
 import { bookingState, occupiedSeats, startCheckout } from '../stores/booking'
+import { useCheckoutTimer } from '../utils/checkoutTimer'
 import {
   formatSessionDate,
   getSessionEndTime,
@@ -27,8 +28,9 @@ const movieTitle = ref('')
 const movieDuration = ref(0)
 const checkoutError = ref('')
 
-function checkout(seats: string[]) {
-  if (!session.value) return
+function saveSelection(seats: string[]) {
+  if (!session.value) return false
+
   try {
     startCheckout({
       movieId: session.value.movieId, movieTitle: movieTitle.value,
@@ -37,19 +39,28 @@ function checkout(seats: string[]) {
       hallName: session.value.hallName,
       date: session.value.date, time: session.value.time, seats
     })
-    void router.push({ name: 'payment' })
+    checkoutError.value = ''
+    updateTime()
+    return true
   } catch {
     checkoutError.value = 'Could not save your selection. Please allow browser storage and try again.'
+    return false
+  }
+}
+
+function checkout(seats: string[]) {
+  updateTime()
+  if (remainingSeconds.value && saveSelection(seats)) {
+    void router.push({ name: 'payment' })
   }
 }
 
 const session = ref<Session | null>(null)
-const initialSeats = computed(() => {
+const draft = computed(() => {
   const draft = bookingState.value.draft
-  return draft && draft.sessionId === session.value?.id && draft.expiresAt > Date.now()
-    ? draft.seats
-    : []
+  return draft?.sessionId === session.value?.id ? draft : null
 })
+const { remainingSeconds, remainingTime, updateTime } = useCheckoutTimer(() => draft.value?.expiresAt)
 const loading = ref(false)
 const error = ref('')
 
@@ -93,6 +104,8 @@ async function loadSession() {
       session.value = data
       movieTitle.value = movie.title
       movieDuration.value = movie.duration
+      if (draft.value?.expiresAt === undefined) saveSelection(draft.value?.seats ?? [])
+      updateTime()
     }
   } catch (err) {
     if (
@@ -164,10 +177,19 @@ watch(
         </section>
 
         <p v-if="checkoutError" class="checkout-error" role="alert">{{ checkoutError }}</p>
-        <SeatPicker :key="`${session.movieId}-${session.id}`" :occupied-seats="occupiedSeats(session.id)"
-          :hall-name="session.hallName"
-          :initial-seats="initialSeats"
-          @checkout="checkout" />
+        <template v-if="remainingSeconds">
+          <p class="booking-timer" role="timer">Time left to confirm <strong>{{ remainingTime }}</strong></p>
+          <SeatPicker :key="`${session.movieId}-${session.id}`" :occupied-seats="occupiedSeats(session.id)"
+            :hall-name="session.hallName"
+            :initial-seats="draft?.seats"
+            @checkout="checkout" />
+        </template>
+        <section v-else class="state-card">
+          <p v-if="draft" role="alert">Checkout time expired.</p>
+          <button type="button" class="back-button" @click="saveSelection([])">
+            {{ draft ? 'Choose your seats again' : 'Start choosing seats' }}
+          </button>
+        </section>
         <footer class="booking-note"><span aria-hidden="true">✦</span> Demo booking · No real payment · Tickets saved in this browser</footer>
       </template>
     </div>
@@ -177,6 +199,8 @@ watch(
 <style scoped>
 .booking-page { min-height: 100vh; padding: 28px 24px 40px; background: radial-gradient(ellipse at 80% 0%, #39275540, transparent 55%), #0d0d0f; color: #f2f2f3; }
 .booking-shell { max-width: 1100px; margin: auto; }
+.booking-timer { margin: 0 0 16px; color: #d7c6ff; font-variant-numeric: tabular-nums; }
+.state-card button { cursor: pointer; }
 .booking-topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 28px; border-bottom: 1px solid #ffffff12; }
 .brand { color: #fff; text-decoration: none; font-size: 20px; font-weight: 900; letter-spacing: 2px; }
 .brand span { display: block; margin-top: 5px; font-size: 9px; letter-spacing: 6px; color: #b6a0ff; }

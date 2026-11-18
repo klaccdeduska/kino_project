@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { formatSessionDate } from '../utils/session'
+import { useCheckoutTimer } from '../utils/checkoutTimer'
 import {
   bookingState,
   calculateTotalCents,
@@ -12,22 +13,11 @@ import {
 
 const router = useRouter()
 
-const draft = computed(() => bookingState.value.draft)
-const now = ref(Date.now())
-const remainingSeconds = computed(() =>
-  Math.max(0, Math.ceil(((draft.value?.expiresAt ?? 0) - now.value) / 1000)),
-)
-const remainingTime = computed(() => {
-  const minutes = Math.floor(remainingSeconds.value / 60)
-  const seconds = String(remainingSeconds.value % 60).padStart(2, '0')
-  return `${minutes}:${seconds}`
+const draft = computed(() => {
+  const selection = bookingState.value.draft
+  return selection?.seats.length ? selection : null
 })
-
-let timer: number | undefined
-onMounted(() => {
-  timer = window.setInterval(() => { now.value = Date.now() }, 250)
-})
-onUnmounted(() => window.clearInterval(timer))
+const { remainingSeconds, remainingTime, updateTime } = useCheckoutTimer(() => draft.value?.expiresAt)
 
 const totalCents = computed(
   () => calculateTotalCents(draft.value?.seats ?? []),
@@ -45,7 +35,7 @@ async function pay() {
   try {
     const selection = draft.value
     if (!selection) throw new Error('Please choose your seats first.')
-    now.value = Date.now()
+    updateTime()
     if (!remainingSeconds.value) return
     const response = await fetch(`/api/movies/${selection.movieId}/sessions/${selection.sessionId}`)
     if (!response.ok) {
