@@ -4,6 +4,19 @@ export function formatSessionDate(date: string) {
   return `${day}.${month}.${year}`
 }
 
+export function getSessionWeekStart(date: string) {
+  const monday = new Date(`${date}T00:00:00Z`)
+  const daysSinceMonday = (monday.getUTCDay() + 6) % 7
+  monday.setUTCDate(monday.getUTCDate() - daysSinceMonday)
+  return monday.toISOString().slice(0, 10)
+}
+
+export function formatSessionWeek(start: string) {
+  const sunday = new Date(`${start}T00:00:00Z`)
+  sunday.setUTCDate(sunday.getUTCDate() + 6)
+  return `${formatSessionDate(start)} – ${formatSessionDate(sunday.toISOString().slice(0, 10))}`
+}
+
 export function getSessionEndTime(time: string, duration: number) {
   const [hours = 0, minutes = 0] = time.split(':').map(Number)
 
