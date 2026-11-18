@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import qrcode from 'qrcode-generator'
 import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { formatSessionDate } from '../utils/session'
@@ -15,6 +16,20 @@ const order = computed(() =>
     item => item.id === route.params.orderId,
   ),
 )
+
+const tickets = computed(() => {
+  const currentOrder = order.value
+  if (!currentOrder) return []
+
+  return currentOrder.seats.map((seat, index) => {
+    const reference = `${currentOrder.id}-${index + 1}`
+    const qr = qrcode(0, 'M')
+    qr.addData(reference)
+    qr.make()
+
+    return { seat, reference, qrImage: qr.createDataURL(4, 16) }
+  })
+})
 
 function printTickets() {
   window.print()
@@ -49,13 +64,13 @@ function printTickets() {
 
         <div class="section-heading print-action"><h2>Your tickets</h2><span>One ticket. One great seat.</span></div>
         <div class="ticket-list">
-          <article v-for="(seat, index) in order.seats" :key="seat" class="ticket" :aria-label="`Ticket ${index + 1}, row ${seat.split('-')[0]}, seat ${seat.split('-')[1]}`">
+          <article v-for="({ seat, reference, qrImage }, index) in tickets" :key="reference" class="ticket" :aria-label="`Ticket ${index + 1}, row ${seat.split('-')[0]}, seat ${seat.split('-')[1]}`">
             <div class="ticket-main">
               <div class="ticket-heading"><span class="eyebrow">BOOBLICKI CINEMA</span><span class="category-badge">{{ seat.startsWith('E-') ? 'VIP' : seat.startsWith('D-') ? 'Double' : 'Standard' }}</span></div>
               <h2>{{ order.movieTitle }}</h2>
               <p class="session-line">{{ formatSessionDate(order.date) }} — {{ order.time }}</p>
               <p class="seat-line">{{ order.hallName }} · Row {{ seat.split('-')[0] }} · Seat {{ seat.split('-')[1] }}</p>
-              <p class="ticket-reference">Ticket: {{ order.id }}-{{ index + 1 }}</p>
+              <p class="ticket-reference">Ticket: {{ reference }}</p>
               <small>Demo ticket · Not valid for cinema admission</small>
             </div>
             <div class="ticket-stub">
@@ -63,6 +78,7 @@ function printTickets() {
               <strong class="seat-number">{{ seat.split('-')[0] }}<span>{{ seat.split('-')[1] }}</span></strong>
               <span class="stub-hall">{{ order.hallName }}</span>
               <strong class="ticket-price">Price: {{ formatPrice(getSeatPriceCents(seat)) }}</strong>
+              <img class="ticket-qr" :src="qrImage" :alt="`QR code for ticket ${index + 1}`" width="120" height="120">
               <span class="ticket-count">{{ String(index + 1).padStart(2, '0') }} / {{ String(order.seats.length).padStart(2, '0') }}</span>
             </div>
           </article>
@@ -130,6 +146,7 @@ h1 { margin: 0; font-size: clamp(30px, 5vw, 46px); line-height: 1.15; letter-spa
 .seat-number span { margin-left: 7px; color: #f3edf9; }
 .stub-hall { color: #c0b2d1; font-size: 12px; }
 .ticket-price { font-size: 13px; }
+.ticket-qr { display: block; justify-self: center; image-rendering: pixelated; }
 .ticket-count { color: #a99db8; font: 11px monospace; letter-spacing: 3px; }
 .save-panel { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 28px; padding: 26px 28px; border: 1px solid #39323f; border-radius: 16px; background: #17151c; }
 .save-panel h2 { margin: 0 0 10px; font-size: 18px; }
@@ -163,6 +180,7 @@ footer { margin-top: 30px; }
   .seat-number { grid-column: 1; grid-row: 2 / 4; font-size: 38px; }
   .stub-hall, .ticket-price, .ticket-count { grid-column: 2; text-align: right; }
   .stub-hall { grid-row: 1; }
+  .ticket-qr { grid-column: 1 / -1; }
   .save-panel { flex-direction: column; align-items: stretch; padding: 22px; }
 }
 @media (prefers-reduced-motion: reduce) { .back-button, .primary-button { transition: none; } .primary-button:hover { transform: none; } }

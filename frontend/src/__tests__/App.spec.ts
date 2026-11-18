@@ -35,6 +35,9 @@ describe('Demo booking', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('Tickets purchased!')
     expect(wrapper.findAll('article')).toHaveLength(2)
+    const qrImages = wrapper.findAll('article img').map(img => img.attributes('src'))
+    expect(qrImages).toHaveLength(2)
+    expect(new Set(qrImages).size).toBe(2)
     for (const ticket of wrapper.findAll('article')) {
       expect(ticket.text()).toContain('Hall 2')
       expect(ticket.text()).toContain('21.10.2026 — 18:00')
@@ -44,6 +47,7 @@ describe('Demo booking', () => {
     await router.push(confirmationPath)
     const reopened = mount(App, { global: { plugins: [router] } })
     expect(reopened.findAll('article')).toHaveLength(2)
+    expect(reopened.findAll('article img').map(img => img.attributes('src'))).toEqual(qrImages)
     expect(reopened.get('article').text()).toContain('Hall 2')
     reopened.unmount()
     await router.push('/payment')
