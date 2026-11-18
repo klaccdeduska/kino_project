@@ -9,16 +9,16 @@ A student cinema project: Vue 3 + TypeScript frontend, NestJS API, MariaDB 11,
 Redis container, demo seat selection, payment and printable tickets.
 Bookings are saved in this browser only; demo payments do not charge money.
 
-Fresh demo sessions start tomorrow and cover seven days, in Europe/Tallinn local time.
+Fresh demo sessions start tomorrow and cover 30 days, in Europe/Tallinn local time.
 Started sessions are unavailable, including at payment. Existing schedules are preserved.
 
-To add a fresh week of demo sessions to an existing local database:
+To add 30 days of demo sessions starting tomorrow to an existing local database:
 
 ```powershell
 npm.cmd run db:refresh-sessions
 ```
 
-The command adds shows for tomorrow through the following seven days. It preserves
+The command adds shows for 30 days starting tomorrow. It preserves
 old sessions and ticket IDs, skips existing or overlapping shows, and can be rerun.
 Run it again when the demo schedule expires. On the hosted site, run it from the
 server checkout that connects to that database, then reload the movie page.
@@ -266,7 +266,7 @@ Invoke-RestMethod http://localhost:3000/api/movies/1/sessions
 | No available sessions | Past shows are hidden; import future sessions into an existing demo database without deleting its volume |
 | Missing table/column | Follow the conditional SQL steps above; rerunning `setup` does not migrate existing tables |
 | Update says local changes exist | Commit/stash your work first; this is an intentional protection |
-| No upcoming demo dates | The seed has fixed dates, 21–27 October 2026; refreshing those dates is separate work |
+| No upcoming demo dates | Run `npm.cmd run db:refresh-sessions` to add future demo sessions |
 
 [Choose language](#bubliki--cinema-project)
 
@@ -280,7 +280,7 @@ Redise konteiner, istekohtade valik, näidismakse ja prinditavad piletid.
 Broneeringud salvestatakse ainult sellesse brauserisse. Päris raha ei võeta.
 
 Demo seansside uuendamine: `npm.cmd run db:refresh-sessions` lisab seansid järgmiseks
-seitsmeks päevaks alates homsest. Olemasolevad seansid säilivad, kattuvad ajad jäetakse
+30 päevaks alates homsest. Olemasolevad seansid säilivad, kattuvad ajad jäetakse
 vahele. Avaliku saidi puhul käivita käsk serveri projektikaustas.
 
 ### Nõuded ja käskude kasutamine
@@ -538,7 +538,7 @@ Invoke-RestMethod http://localhost:3000/api/movies/1/sessions
 Бронирования сохраняются только в этом браузере. Настоящие деньги не списываются.
 
 Обновление деморасписания: `npm.cmd run db:refresh-sessions` добавляет сеансы на
-семь дней начиная с завтрашнего дня. Старые сеансы сохраняются, дубли и пересечения
+30 дней начиная с завтрашнего дня. Старые сеансы сохраняются, дубли и пересечения
 пропускаются. Для опубликованного сайта выполните команду в папке проекта на сервере,
 затем обновите страницу фильмов. Сервер должен проксировать `/api` в NestJS backend.
 
@@ -784,6 +784,6 @@ Invoke-RestMethod http://localhost:3000/api/movies/1/sessions
 | Нет доступных сеансов | Прошедшие показы скрыты; добавьте будущие сеансы в существующую демобазу, сохранив volume |
 | Нет таблицы/столбца | Используйте условные SQL-шаги выше; `setup` не мигрирует существующие таблицы |
 | Update сообщает о локальных изменениях | Сначала commit/stash; это предусмотренная защита |
-| Нет будущих учебных дат | Даты сеансов фиксированы: 21–27 октября 2026 года; их обновление — отдельная задача |
+| Нет будущих учебных дат | Выполните `npm.cmd run db:refresh-sessions`, чтобы добавить будущие сеансы |
 
 [Выбрать язык](#bubliki--cinema-project)

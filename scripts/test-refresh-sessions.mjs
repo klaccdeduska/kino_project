@@ -23,13 +23,20 @@ try {
   await connection.query(`INSERT INTO sessions (id, movie_id, hall_id, starts_at)
     VALUES (5000, 1, 1, '2026-01-01 14:30:00')`);
   const first = await refreshSessions(connection);
-  assert.equal(first.added, 22);
+  assert.ok(first.added >= 93 && first.added <= 96);
+  assert.equal(first.skipped, 0);
   const second = await refreshSessions(connection);
   assert.equal(second.added, 0);
   const [[counts]] = await connection.query(`SELECT COUNT(*) AS total,
-    SUM(starts_at > NOW()) AS upcoming FROM sessions`);
-  assert.equal(Number(counts.total), 23);
-  assert.equal(Number(counts.upcoming), 22);
+    SUM(starts_at > NOW()) AS upcoming,
+    COUNT(DISTINCT CASE WHEN starts_at > NOW() THEN DATE(starts_at) END) AS days,
+    MIN(CASE WHEN starts_at > NOW() THEN DATEDIFF(starts_at, CURDATE()) END) AS first_day,
+    MAX(DATEDIFF(starts_at, CURDATE())) AS last_day FROM sessions`);
+  assert.equal(Number(counts.total), first.added + 1);
+  assert.equal(Number(counts.upcoming), first.added);
+  assert.equal(Number(counts.days), 30);
+  assert.equal(Number(counts.first_day), 1);
+  assert.equal(Number(counts.last_day), 30);
   const [[old]] = await connection.query('SELECT movie_id FROM sessions WHERE id = 5000');
   assert.equal(old.movie_id, 1);
   const [[overlaps]] = await connection.query(`SELECT COUNT(*) AS count FROM sessions a
@@ -40,14 +47,15 @@ try {
       AND b.starts_at < DATE_ADD(a.starts_at, INTERVAL ma.duration MINUTE)`);
   assert.equal(Number(overlaps.count), 0);
 
-  await connection.query('DELETE FROM sessions WHERE id <> 5000');
-  await connection.query(`INSERT INTO sessions (movie_id, hall_id, starts_at)
-    VALUES (3, 1, TIMESTAMP(CURDATE() + INTERVAL 1 DAY, '14:00:00'))`);
+  const [[slot]] = await connection.query('SELECT id FROM sessions ORDER BY starts_at LIMIT 1 OFFSET 1');
+  await connection.execute('DELETE FROM sessions WHERE id <> 5000 AND id <> ?', [slot.id]);
+  await connection.execute('UPDATE sessions SET starts_at = starts_at - INTERVAL 1 MINUTE WHERE id = ?', [slot.id]);
+  const [[before]] = await connection.execute('SELECT CAST(starts_at AS CHAR) AS starts_at FROM sessions WHERE id = ?', [slot.id]);
   const custom = await refreshSessions(connection);
-  assert.equal(custom.added, 21);
-  const [[preserved]] = await connection.query(`SELECT COUNT(*) AS count FROM sessions
-    WHERE movie_id = 3 AND hall_id = 1 AND TIME(starts_at) = '14:00:00'`);
-  assert.equal(Number(preserved.count), 1);
+  assert.equal(custom.added, first.added - 1);
+  assert.equal(custom.skipped, 1);
+  const [[preserved]] = await connection.execute('SELECT CAST(starts_at AS CHAR) AS starts_at FROM sessions WHERE id = ?', [slot.id]);
+  assert.deepEqual(preserved, before);
   console.log('Refresh passed: upcoming shows, reruns, preserved history and custom-show conflict checks.');
 } finally {
   await connection.end();

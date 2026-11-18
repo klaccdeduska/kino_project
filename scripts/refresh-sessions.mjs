@@ -15,7 +15,9 @@ export async function refreshSessions(connection) {
     await connection.query('DROP TEMPORARY TABLE IF EXISTS demo_session_candidates');
     await connection.query('CREATE TEMPORARY TABLE demo_session_candidates LIKE sessions');
     await connection.query(seed.slice(seedStart).replace('INSERT INTO sessions', 'INSERT INTO demo_session_candidates'));
-    const [candidates] = await connection.query('SELECT * FROM demo_session_candidates ORDER BY starts_at, hall_id, id');
+    const [candidates] = await connection.query(`
+      SELECT movie_id, hall_id, CAST(starts_at AS CHAR) AS starts_at, language, subtitles, format
+      FROM demo_session_candidates ORDER BY starts_at, hall_id, id`);
     await connection.beginTransaction();
     for (const candidate of candidates) {
       // Preserve existing IDs, tickets and custom shows. Check the full duration,

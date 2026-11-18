@@ -15,28 +15,40 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 SET @demo_start = CURDATE() + INTERVAL 1 DAY;
+-- Keep the same slots on each weekday so a later refresh can extend the schedule.
+SET @demo_monday = DATE_SUB(@demo_start, INTERVAL WEEKDAY(@demo_start) DAY);
 
 INSERT INTO sessions (movie_id, starts_at, hall_id, language, subtitles, format)
-VALUES
-  (1, TIMESTAMP(@demo_start + INTERVAL 0 DAY, '14:30:00'), 1, 'English', 'Estonian, Russian', '2D'),
-  (1, TIMESTAMP(@demo_start + INTERVAL 0 DAY, '17:45:00'), 1, 'English', 'Estonian, Russian', '2D'),
-  (2, TIMESTAMP(@demo_start + INTERVAL 0 DAY, '15:00:00'), 2, 'English', 'Estonian, Russian', '2D'),
-  (2, TIMESTAMP(@demo_start + INTERVAL 1 DAY, '20:15:00'), 2, 'English', 'Estonian, Russian', '2D'),
-  (3, TIMESTAMP(@demo_start + INTERVAL 1 DAY, '18:00:00'), 1, 'English', 'Estonian, Russian', '2D'),
-  (3, TIMESTAMP(@demo_start + INTERVAL 1 DAY, '23:20:00'), 2, 'English', 'Estonian, Russian', '2D'),
-  (4, TIMESTAMP(@demo_start + INTERVAL 2 DAY, '16:45:00'), 1, 'English', 'Estonian, Russian', '2D'),
-  (4, TIMESTAMP(@demo_start + INTERVAL 2 DAY, '19:15:00'), 2, 'English', 'Estonian, Russian', '2D'),
-  (5, TIMESTAMP(@demo_start + INTERVAL 2 DAY, '19:30:00'), 1, 'English', 'Estonian, Russian', '2D'),
-  (5, TIMESTAMP(@demo_start + INTERVAL 2 DAY, '22:00:00'), 2, 'English', 'Estonian, Russian', '2D'),
-  (7, TIMESTAMP(@demo_start + INTERVAL 3 DAY, '19:30:00'), 1, 'English', 'Estonian, Russian', '2D'),
-  (7, TIMESTAMP(@demo_start + INTERVAL 3 DAY, '23:00:00'), 1, 'English', 'Estonian, Russian', '2D'),
-  (8, TIMESTAMP(@demo_start + INTERVAL 4 DAY, '14:00:00'), 2, 'English', 'Estonian, Russian', '2D'),
-  (8, TIMESTAMP(@demo_start + INTERVAL 4 DAY, '16:30:00'), 2, 'English', 'Estonian, Russian', '2D'),
-  (9, TIMESTAMP(@demo_start + INTERVAL 4 DAY, '18:15:00'), 1, 'English', 'Estonian, Russian', '2D'),
-  (9, TIMESTAMP(@demo_start + INTERVAL 4 DAY, '20:45:00'), 2, 'English', 'Estonian, Russian', '2D'),
-  (10, TIMESTAMP(@demo_start + INTERVAL 5 DAY, '15:30:00'), 1, 'English', 'Estonian, Russian', '2D'),
-  (10, TIMESTAMP(@demo_start + INTERVAL 5 DAY, '18:00:00'), 2, 'English', 'Estonian, Russian', '2D'),
-  (11, TIMESTAMP(@demo_start + INTERVAL 5 DAY, '19:45:00'), 1, 'English', 'Estonian, Russian', '2D'),
-  (11, TIMESTAMP(@demo_start + INTERVAL 5 DAY, '22:15:00'), 2, 'English', 'Estonian, Russian', '2D'),
-  (12, TIMESTAMP(@demo_start + INTERVAL 6 DAY, '14:15:00'), 1, 'English', 'Estonian, Russian', '2D'),
-  (12, TIMESTAMP(@demo_start + INTERVAL 6 DAY, '16:45:00'), 2, 'English', 'Estonian, Russian', '2D');
+SELECT slot.movie_id, TIMESTAMP(DATE_ADD(@demo_monday, INTERVAL (weeks.week_offset * 7 + slot.day_offset) DAY), slot.start_time),
+       slot.hall_id, 'English', 'Estonian, Russian', '2D'
+FROM (
+  SELECT 0 AS day_offset, '14:30:00' AS start_time, 1 AS movie_id, 1 AS hall_id
+  UNION ALL SELECT 0, '17:45:00', 1, 1
+  UNION ALL SELECT 0, '15:00:00', 2, 2
+  UNION ALL SELECT 1, '20:15:00', 2, 2
+  UNION ALL SELECT 1, '18:00:00', 3, 1
+  UNION ALL SELECT 1, '23:20:00', 3, 2
+  UNION ALL SELECT 2, '16:45:00', 4, 1
+  UNION ALL SELECT 2, '19:15:00', 4, 2
+  UNION ALL SELECT 2, '19:30:00', 5, 1
+  UNION ALL SELECT 2, '22:00:00', 5, 2
+  UNION ALL SELECT 3, '19:30:00', 7, 1
+  UNION ALL SELECT 3, '23:00:00', 7, 1
+  UNION ALL SELECT 4, '14:00:00', 8, 2
+  UNION ALL SELECT 4, '16:30:00', 8, 2
+  UNION ALL SELECT 4, '18:15:00', 9, 1
+  UNION ALL SELECT 4, '20:45:00', 9, 2
+  UNION ALL SELECT 5, '15:30:00', 10, 1
+  UNION ALL SELECT 5, '18:00:00', 10, 2
+  UNION ALL SELECT 5, '19:45:00', 11, 1
+  UNION ALL SELECT 5, '22:15:00', 11, 2
+  UNION ALL SELECT 6, '14:15:00', 12, 1
+  UNION ALL SELECT 6, '16:45:00', 12, 2
+) AS slot
+CROSS JOIN (
+  SELECT 0 AS week_offset UNION ALL SELECT 1 UNION ALL SELECT 2
+  UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5
+) AS weeks
+WHERE weeks.week_offset * 7 + slot.day_offset >= WEEKDAY(@demo_start)
+  AND weeks.week_offset * 7 + slot.day_offset < WEEKDAY(@demo_start) + 30
+ORDER BY weeks.week_offset, slot.day_offset, slot.start_time, slot.hall_id;
