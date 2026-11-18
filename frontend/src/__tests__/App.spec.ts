@@ -69,6 +69,35 @@ describe('Demo booking', () => {
     wrapper.unmount()
   })
 
+  it('keeps the checkout deadline when editing seats and blocks expired purchases', async () => {
+    const booking = {
+      movieId: 1, movieTitle: 'Test movie', sessionId: 10,
+      hallId: 2, hallName: 'Hall 2', date: '2026-10-21', time: '18:00', seats: ['A-1'],
+    }
+    const router = createRouter({ history: createMemoryHistory(), routes: [
+      { path: '/payment', component: PaymentView },
+      { path: '/booking/:movieId', name: 'booking', component: { template: '<p>Seats</p>' } },
+    ] })
+    await router.push('/payment')
+    vi.useFakeTimers()
+    const start = Date.now()
+    startCheckout(booking)
+    vi.setSystemTime(start + 9 * 60_000)
+    startCheckout({ ...booking, seats: ['A-2'] })
+    const wrapper = mount(PaymentView, { global: { plugins: [router] } })
+    try {
+      expect(wrapper.get('[role="timer"]').text()).toContain('1:00')
+      await vi.advanceTimersByTimeAsync(60_000)
+      expect(wrapper.get('[role="alert"]').text()).toContain('Checkout time expired')
+      expect(wrapper.get('button').attributes('disabled')).toBeDefined()
+      expect(() => purchase()).toThrow('Checkout time expired')
+      expect(bookingState.value.orders).toHaveLength(0)
+    } finally {
+      wrapper.unmount()
+      vi.useRealTimers()
+    }
+  })
+
   it('requires seats and emits the selection', async () => {
     const wrapper = mount(SeatPicker, { props: { hallName: 'Hall 2', occupiedSeats: ['A-3'] } })
     expect(wrapper.get('h2').text()).toBe('Hall 2')

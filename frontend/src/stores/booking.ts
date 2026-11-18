@@ -17,6 +17,12 @@ export interface Order extends Booking {
   totalCents: number
 }
 
+interface CheckoutDraft extends Booking {
+  expiresAt: number
+}
+
+const checkoutDurationMs = 10 * 60 * 1000
+
 export const ticketPriceCents = 800
 export const vipTicketPriceCents = 1200
 
@@ -25,7 +31,7 @@ export const demoOccupiedSeats = ['A-3', 'B-5', 'C-4']
 const storageKey = 'cinema-demo-bookings-v2'
 
 interface State {
-  draft: Booking | null
+  draft: CheckoutDraft | null
   orders: Order[]
 }
 
@@ -77,11 +83,17 @@ export function occupiedSeats(sessionId: number) {
 }
 
 export function startCheckout(booking: Booking) {
+  const previous = bookingState.value.draft
+  const now = Date.now()
+
   save({
     ...bookingState.value,
     draft: {
       ...booking,
       seats: [...booking.seats],
+      expiresAt: previous?.sessionId === booking.sessionId && previous.expiresAt > now
+        ? previous.expiresAt
+        : now + checkoutDurationMs,
     },
   })
 }
@@ -93,6 +105,11 @@ export function purchase(): Order {
     throw new Error('Please choose your seats first.')
   }
 
+  const { expiresAt, ...booking } = draft
+  if (!(expiresAt > Date.now())) {
+    throw new Error('Checkout time expired. Please choose your seats again.')
+  }
+
   const taken = occupiedSeats(draft.sessionId)
 
   if (draft.seats.some(seat => taken.includes(seat))) {
@@ -102,7 +119,7 @@ export function purchase(): Order {
   }
 
   const order: Order = {
-    ...draft,
+    ...booking,
     seats: [...draft.seats],
     id: crypto.randomUUID(),
     purchasedAt: new Date().toISOString(),

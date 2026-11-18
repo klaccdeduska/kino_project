@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { formatSessionDate } from '../utils/session'
 import {
@@ -13,6 +13,21 @@ import {
 const router = useRouter()
 
 const draft = computed(() => bookingState.value.draft)
+const now = ref(Date.now())
+const remainingSeconds = computed(() =>
+  Math.max(0, Math.ceil(((draft.value?.expiresAt ?? 0) - now.value) / 1000)),
+)
+const remainingTime = computed(() => {
+  const minutes = Math.floor(remainingSeconds.value / 60)
+  const seconds = String(remainingSeconds.value % 60).padStart(2, '0')
+  return `${minutes}:${seconds}`
+})
+
+let timer: number | undefined
+onMounted(() => {
+  timer = window.setInterval(() => { now.value = Date.now() }, 250)
+})
+onUnmounted(() => window.clearInterval(timer))
 
 const totalCents = computed(
   () => calculateTotalCents(draft.value?.seats ?? []),
@@ -30,6 +45,8 @@ async function pay() {
   try {
     const selection = draft.value
     if (!selection) throw new Error('Please choose your seats first.')
+    now.value = Date.now()
+    if (!remainingSeconds.value) return
     const response = await fetch(`/api/movies/${selection.movieId}/sessions/${selection.sessionId}`)
     if (!response.ok) {
       throw new Error(response.status === 404
@@ -47,7 +64,7 @@ async function pay() {
     error.value = err instanceof Error
       ? err.message
       : 'Could not complete the purchase.'
-
+  } finally {
     submitting.value = false
   }
 }
@@ -101,7 +118,12 @@ async function pay() {
           <div class="summary-line"><span>Tickets: {{ draft.seats.length }}</span><span>{{ formatPrice(totalCents) }}</span></div>
           <div class="total"><span>Total</span><strong>{{ formatPrice(totalCents) }}</strong></div>
           <div class="demo-notice"><span class="demo-icon" aria-hidden="true">✦</span><div><strong>Just a demo. Enjoy the experience.</strong><p>No money will be charged and no card details are required.</p></div></div>
-          <button class="pay-button" type="button" :disabled="submitting || draft.seats.length === 0" :aria-busy="submitting" @click="pay">{{ submitting ? 'Processing…' : 'Confirm demo payment' }}</button>
+          <p v-if="remainingSeconds" class="confirmation-note" role="timer">Time left to confirm {{ remainingTime }}</p>
+          <p v-else class="error-message" role="alert">
+            Checkout time expired.
+            <RouterLink :to="{ name: 'booking', params: { movieId: draft.movieId }, query: { sessionId: draft.sessionId } }">Choose your seats again</RouterLink>
+          </p>
+          <button class="pay-button" type="button" :disabled="submitting || draft.seats.length === 0 || !remainingSeconds" :aria-busy="submitting" @click="pay">{{ submitting ? 'Processing…' : 'Confirm demo payment' }}</button>
           <p class="confirmation-note">Your tickets will be ready on the next page.</p>
         </aside>
       </div>

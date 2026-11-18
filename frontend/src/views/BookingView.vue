@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import SeatPicker from '../components/SeatPicker.vue'
 import { bookingState, occupiedSeats, startCheckout } from '../stores/booking'
@@ -44,6 +44,12 @@ function checkout(seats: string[]) {
 }
 
 const session = ref<Session | null>(null)
+const initialSeats = computed(() => {
+  const draft = bookingState.value.draft
+  return draft && draft.sessionId === session.value?.id && draft.expiresAt > Date.now()
+    ? draft.seats
+    : []
+})
 const loading = ref(false)
 const error = ref('')
 
@@ -160,7 +166,7 @@ watch(
         <p v-if="checkoutError" class="checkout-error" role="alert">{{ checkoutError }}</p>
         <SeatPicker :key="`${session.movieId}-${session.id}`" :occupied-seats="occupiedSeats(session.id)"
           :hall-name="session.hallName"
-          :initial-seats="bookingState.draft?.sessionId === session.id ? bookingState.draft.seats : []"
+          :initial-seats="initialSeats"
           @checkout="checkout" />
         <footer class="booking-note"><span aria-hidden="true">✦</span> Demo booking · No real payment · Tickets saved in this browser</footer>
       </template>
