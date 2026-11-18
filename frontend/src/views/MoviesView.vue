@@ -52,6 +52,12 @@ const cinemaDate = new Intl.DateTimeFormat('sv-SE', {
 })
 const currentWeek = ref(getSessionWeekStart(cinemaDate.format()))
 const selectedWeek = ref(currentWeek.value)
+const selectedDate = ref('')
+
+function selectWeek(week: string) {
+  selectedWeek.value = week
+  selectedDate.value = ''
+}
 
 const sessionsMovie = computed(() => {
   return movies.value.find(
@@ -84,6 +90,10 @@ const availableWeeks = computed(() => {
 })
 
 const filteredSessions = computed(() => {
+  if (selectedDate.value) {
+    return sessions.value.filter((session) => session.date === selectedDate.value)
+  }
+
   if (selectedWeek.value === '') {
     return sessions.value
   }
@@ -143,7 +153,7 @@ async function toggleSessions(movieId: number) {
 
   sessionsMovieId.value = movieId
   currentWeek.value = getSessionWeekStart(cinemaDate.format())
-  selectedWeek.value = currentWeek.value
+  selectWeek(currentWeek.value)
   sessions.value = []
   sessionsError.value = ''
   sessionsLoading.value = true
@@ -253,16 +263,21 @@ onMounted(loadMovies)
       <h3>Sessions: {{ sessionsMovie.title }}</h3>
 
       <div class="session-dates" role="group" aria-label="Session weeks">
-        <button type="button" :class="{ 'date-button--selected': selectedWeek === '' }"
-          :aria-pressed="selectedWeek === ''" @click="selectedWeek = ''">
+        <button type="button" :class="{ 'date-button--selected': !selectedDate && selectedWeek === '' }"
+          :aria-pressed="!selectedDate && selectedWeek === ''" @click="selectWeek('')">
           All weeks
         </button>
         <button v-for="week in availableWeeks" :key="week" type="button" :class="{
-          'date-button--selected': selectedWeek === week,
-        }" :aria-pressed="selectedWeek === week" @click="selectedWeek = week">
+          'date-button--selected': !selectedDate && selectedWeek === week,
+        }" :aria-pressed="!selectedDate && selectedWeek === week" @click="selectWeek(week)">
           {{ formatSessionWeek(week) }}
         </button>
       </div>
+
+      <label class="session-date-filter">
+        Date:
+        <input v-model="selectedDate" type="date" />
+      </label>
 
       <p v-if="sessionsLoading" role="status">
         Loading sessions...
@@ -274,7 +289,9 @@ onMounted(loadMovies)
 
       <p v-else-if="filteredSessions.length === 0">
         {{
-          selectedWeek
+          selectedDate
+            ? 'No sessions available for this date.'
+            : selectedWeek
             ? 'No sessions available for this week.'
             : 'No sessions available.'
         }}
@@ -467,6 +484,14 @@ a:focus-visible,
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 12px;
+}
+
+.session-date-filter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .session-item {
