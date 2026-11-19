@@ -64,7 +64,7 @@ async function pay() {
   <main class="payment-page">
     <div class="payment-shell">
       <header class="topbar">
-        <RouterLink to="/" class="brand">BOOBLICKI<span>CINEMA</span></RouterLink>
+        <RouterLink to="/" class="brand">BUBLIKI<span>CINEMA</span></RouterLink>
         <RouterLink v-if="draft" class="back-button" :to="{
           name: 'booking', params: { movieId: draft.movieId }, query: { sessionId: draft.sessionId },
         }">← Back to seats</RouterLink>

@@ -136,7 +136,7 @@ watch(
   <main class="booking-page">
     <div class="booking-shell">
       <header class="booking-topbar">
-        <RouterLink to="/" class="brand">BOOBLICKI<span>CINEMA</span></RouterLink>
+        <RouterLink to="/" class="brand">BUBLIKI<span>CINEMA</span></RouterLink>
         <RouterLink to="/" class="back-button"><span aria-hidden="true">←</span> Back to movies</RouterLink>
       </header>
 

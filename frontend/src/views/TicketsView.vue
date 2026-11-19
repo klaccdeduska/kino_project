@@ -40,7 +40,7 @@ function printTickets() {
   <main class="tickets-page">
     <div class="tickets-shell">
       <header class="topbar print-action">
-        <RouterLink to="/" class="brand">BOOBLICKI<span>CINEMA</span></RouterLink>
+        <RouterLink to="/" class="brand">BUBLIKI<span>CINEMA</span></RouterLink>
         <RouterLink to="/" class="back-button">← Back to movies</RouterLink>
       </header>
 
@@ -66,7 +66,7 @@ function printTickets() {
         <div class="ticket-list">
           <article v-for="({ seat, reference, qrImage }, index) in tickets" :key="reference" class="ticket" :aria-label="`Ticket ${index + 1}, row ${seat.split('-')[0]}, seat ${seat.split('-')[1]}`">
             <div class="ticket-main">
-              <div class="ticket-heading"><span class="eyebrow">BOOBLICKI CINEMA</span><span class="category-badge">{{ seat.startsWith('E-') ? 'VIP' : seat.startsWith('D-') ? 'Double' : 'Standard' }}</span></div>
+              <div class="ticket-heading"><span class="eyebrow">BUBLIKI CINEMA</span><span class="category-badge">{{ seat.startsWith('E-') ? 'VIP' : seat.startsWith('D-') ? 'Double' : 'Standard' }}</span></div>
               <h2>{{ order.movieTitle }}</h2>
               <p class="session-line">{{ formatSessionDate(order.date) }} — {{ order.time }}</p>
               <p class="seat-line">{{ order.hallName }} · Row {{ seat.split('-')[0] }} · Seat {{ seat.split('-')[1] }}</p>

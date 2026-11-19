@@ -1,4 +1,4 @@
--- BOOBLICKI Cinema - demo movie catalog
+-- BUBLIKI Cinema - demo movie catalog
 -- Age ratings are illustrative, not official Estonian age classifications.
 CREATE DATABASE IF NOT EXISTS kino CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE kino;
