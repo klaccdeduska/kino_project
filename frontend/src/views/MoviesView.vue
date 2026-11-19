@@ -198,13 +198,17 @@ onMounted(loadMovies)
 </script>
 
 <template>
+  <header id="top" class="site-header">
+    <nav class="site-navigation" aria-label="Main navigation">
+      <h1 class="site-brand"><a href="#top">BUBLIKI<span>CINEMA</span></a></h1>
+      <a class="catalog-link" href="#movies">Movies</a>
+      <div class="account-links">
+        <RouterLink class="sign-in" to="/login">Sign in</RouterLink>
+        <RouterLink class="sign-up" to="/register">Sign up</RouterLink>
+      </div>
+    </nav>
+  </header>
   <main>
-    <h1>BUBLIKI</h1>
-      <nav aria-label="Account">
-        <RouterLink to="/login">Sign in</RouterLink>
-        <span> | </span>
-        <RouterLink to="/register">Sign up</RouterLink>
-      </nav>
     <section v-if="featuredMovie" class="featured-movie" aria-labelledby="featured-title">
       <div class="featured-copy">
         <p class="featured-meta">{{ featuredMovie.genre }} · {{ featuredMovie.duration }} min · {{ featuredMovie.ageRating }}</p>
@@ -217,7 +221,7 @@ onMounted(loadMovies)
       <img v-if="featuredMovie.poster" class="featured-poster" :src="featuredMovie.poster" alt=""
         width="200" height="300" fetchpriority="high" />
     </section>
-    <h2>Movies</h2>
+    <h2 id="movies" tabindex="-1">Movies</h2>
 
     <div class="movie-search">
       <label for="movie-search">Search movies:</label>
@@ -353,6 +357,33 @@ onMounted(loadMovies)
 </template>
 
 <style scoped>
+.site-header {
+  border-bottom: 1px solid #342b40;
+  background: #17131d;
+  color: #f2f2f3;
+}
+
+.site-navigation {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  max-width: 1200px;
+  min-height: 74px;
+  margin: 0 auto;
+  padding: 12px 24px;
+}
+
+.site-brand { margin: 0; font-size: 24px; letter-spacing: 2px; }
+.site-brand span { display: block; margin-top: 2px; color: #c4b5fd; font-size: 9px; letter-spacing: 5px; }
+.site-navigation a { color: inherit; text-decoration: none; }
+.site-navigation a:focus-visible { outline: 2px solid #c4b5fd; outline-offset: 4px; }
+.catalog-link, .account-links a { padding: 10px 12px; border-radius: 8px; font-size: 14px; white-space: nowrap; }
+.catalog-link:hover, .sign-in:hover { background: #2c2337; }
+.account-links { display: flex; justify-self: end; align-items: center; gap: 8px; }
+.account-links .sign-up { background: #c4b5fd; color: #20152f; font-weight: 700; }
+.account-links .sign-up:hover { background: #d8cdff; }
+
 .featured-movie {
   display: flex;
   flex-wrap: wrap;
@@ -639,6 +670,13 @@ a {
 }
 
 @media (max-width: 600px) {
+  .site-navigation { grid-template-columns: auto 1fr auto; gap: 4px; padding: 10px 12px; }
+  .site-brand { font-size: 18px; }
+  .site-brand span { font-size: 8px; letter-spacing: 3px; }
+  .catalog-link { justify-self: center; }
+  .catalog-link, .account-links a { padding: 8px 6px; font-size: 12px; }
+  .account-links { gap: 4px; }
+
   main {
     padding: 12px;
   }
