@@ -51,7 +51,41 @@ const loading = ref(true)
 const error = ref('')
 const moviesTrack = ref<HTMLDivElement | null>(null)
 const sessionsPanel = ref<HTMLElement | null>(null)
-const featuredMovie = computed(() => movies.value.find(movie => movie.poster) ?? movies.value[0])
+const featuredMovies = ref<Movie[]>([])
+const featuredIndex = ref(0)
+const featuredDirection = ref(1)
+const featuredMoving = ref(false)
+const featuredMovie = computed(() => featuredMovies.value[featuredIndex.value])
+
+function selectFeaturedMovies() {
+  // Pick once after loading; searching and clicking arrows do not reshuffle.
+  const pool = [...movies.value]
+  const selection: Movie[] = []
+
+  while (pool.length > 0 && selection.length < 4) {
+    const randomIndex = Math.floor(Math.random() * pool.length)
+    const [movie] = pool.splice(randomIndex, 1)
+    if (movie) selection.push(movie)
+  }
+
+  featuredMovies.value = selection
+  featuredIndex.value = 0
+}
+
+function changeFeatured(direction: number) {
+  const count = featuredMovies.value.length
+  if (count < 2 || featuredMoving.value) return
+  featuredDirection.value = direction
+  featuredMoving.value = true
+  featuredIndex.value = (featuredIndex.value + direction + count) % count
+}
+
+function goToFeatured(index: number) {
+  if (index === featuredIndex.value || featuredMoving.value) return
+  featuredDirection.value = index > featuredIndex.value ? 1 : -1
+  featuredMoving.value = true
+  featuredIndex.value = index
+}
 
 const sessionsMovieId = ref<number | null>(null)
 const sessions = ref<Session[]>([])
@@ -175,6 +209,7 @@ async function loadMovies() {
     }
 
     movies.value = await response.json()
+    selectFeaturedMovies()
   } catch (err) {
     error.value = 'Could not load movies from the server.'
     console.error(err)
@@ -245,17 +280,56 @@ onMounted(loadMovies)
     </nav>
   </header>
   <main>
-    <section v-if="featuredMovie" class="featured-movie" aria-labelledby="featured-title">
+    <section v-if="featuredMovie" class="featured-movie" aria-label="Featured movies" aria-roledescription="carousel"
+      :style="{ '--slide-direction': featuredDirection }">
+      <Transition name="featured-motion" @after-enter="featuredMoving = false" @enter-cancelled="featuredMoving = false">
+      <div :key="featuredMovie.id" class="featured-slide" role="group" aria-roledescription="slide"
+        :aria-label="`${featuredIndex + 1} of ${featuredMovies.length}`">
+      <img
+        v-if="featuredMovie.poster"
+        class="featured-background"
+        :src="featuredMovie.poster"
+        alt=""
+        fetchpriority="high"
+      />
       <div class="featured-copy">
-        <p class="featured-meta">{{ featuredMovie.genre }} · {{ featuredMovie.duration }} min · {{ featuredMovie.ageRating }}</p>
+        <span class="featured-label">Featured movie</span>
         <h2 id="featured-title">{{ featuredMovie.title }}</h2>
+        <p class="featured-meta">{{ featuredMovie.genre }} · {{ featuredMovie.duration }} min</p>
+        <div class="featured-badges">
+          <span>{{ featuredMovie.ageRating }}</span>
+          <span>{{ featuredMovie.releaseYear }}</span>
+        </div>
         <p class="featured-description">{{ featuredMovie.description }}</p>
+      </div>
         <button type="button" class="featured-action" @click="showFeaturedSessions(featuredMovie.id)">
           Show sessions
+          <span aria-hidden="true">→</span>
         </button>
       </div>
-      <img v-if="featuredMovie.poster" class="featured-poster" :src="featuredMovie.poster" alt=""
-        width="200" height="300" fetchpriority="high" />
+      </Transition>
+
+      <template v-if="featuredMovies.length > 1">
+        <button type="button" class="featured-arrow featured-arrow--previous" aria-label="Previous featured movie"
+          @click="changeFeatured(-1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="m15 6-6 6 6 6" />
+          </svg>
+        </button>
+        <button type="button" class="featured-arrow featured-arrow--next" aria-label="Next featured movie"
+          @click="changeFeatured(1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="m9 6 6 6-6 6" />
+          </svg>
+        </button>
+        <div class="featured-dots" role="group" aria-label="Choose featured movie">
+          <button v-for="(movie, index) in featuredMovies" :key="movie.id" type="button" class="featured-dot"
+            :aria-label="`Show ${movie.title}`" :aria-pressed="featuredIndex === index" @click="goToFeatured(index)">
+            <span></span>
+          </button>
+        </div>
+      </template>
+      <p class="featured-status" role="status">{{ featuredIndex + 1 }} / {{ featuredMovies.length }} — {{ featuredMovie.title }}</p>
     </section>
     <h2 id="movies" tabindex="-1">Movies</h2>
 
@@ -485,25 +559,237 @@ onMounted(loadMovies)
 .account-links .sign-up:hover { background: #d8cdff; }
 
 .featured-movie {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: clamp(20px, 5vw, 64px);
-  margin: 24px 0 32px;
-  padding: clamp(20px, 5vw, 56px);
-  border: 1px solid #4a3d5b;
-  border-radius: 20px;
-  background: radial-gradient(ellipse at right top, #392856, transparent 72%), #19141f;
+  position: relative;
+  height: 560px;
+  margin: 24px 0 40px;
+  overflow: hidden;
+  border: 1px solid #44364f;
+  border-radius: 24px;
+  background: #19141f;
 }
 
-.featured-copy { flex: 1 1 300px; min-width: 0; }
-.featured-meta { margin: 0; color: #c4b5fd; font-size: 14px; }
-.featured-copy h2 { margin: 12px 0; font-size: clamp(30px, 5vw, 58px); line-height: 1.1; overflow-wrap: anywhere; }
-.featured-description { max-width: 56ch; margin: 0 0 24px; color: #e0d8ea; line-height: 1.6; }
-.featured-poster { display: block; width: min(200px, 100%); height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 12px; }
-.featured-action { padding: 12px 18px; border: 1px solid #c4b5fd; border-radius: 10px; background: #c4b5fd; color: #20152f; font: inherit; font-weight: 700; cursor: pointer; }
-.featured-action:hover { background: #d8cdff; }
+.featured-slide {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 32px;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  padding: 64px 76px 84px;
+  background: radial-gradient(ellipse at 75% 40%, #392849, #141019 75%);
+}
+
+.featured-background {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 18%;
+}
+
+.featured-slide::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(
+      90deg,
+      #100d16e6 0%,
+      #100d16a6 45%,
+      #100d1626 100%
+    ),
+    linear-gradient(0deg, #100d16e6, transparent 70%);
+}
+
+.featured-copy {
+  min-width: 0;
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  max-width: 620px;
+}
+
+.featured-label {
+  display: inline-block;
+  padding: 7px 12px;
+  border: 1px solid #c4b5fd66;
+  border-radius: 8px;
+  background: #30233f;
+  color: #dfd5ff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.featured-copy h2 {
+  margin: 20px 0 12px;
+  color: #fff;
+  font-size: clamp(32px, 5vw, 60px);
+  line-height: 1.05;
+  letter-spacing: -1px;
+  overflow-wrap: anywhere;
+}
+
+.featured-meta {
+  margin: 0 0 16px;
+  color: #d4cddd;
+  line-height: 1.5;
+}
+
+.featured-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.featured-badges span {
+  padding: 6px 10px;
+  border: 1px solid #ffffff40;
+  border-radius: 8px;
+  background: #15121bc9;
+  color: #eeeaf4;
+  font-size: 13px;
+}
+
+.featured-description {
+  max-width: 52ch;
+  margin: 0 0 24px;
+  color: #e0d8ea;
+  line-height: 1.6;
+}
+
+.featured-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 13px 22px;
+  border: 1px solid #c4b5fd;
+  border-radius: 12px;
+  background: #c4b5fd;
+  color: #20152f;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.featured-action:hover:not(:disabled) {
+  background: #ded5ff;
+}
+
+@media (max-width: 600px) {
+  .featured-movie {
+    height: 600px;
+    border-radius: 16px;
+  }
+
+  .featured-slide {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 16px;
+    padding: 44px 48px 76px;
+  }
+
+  .featured-slide::before {
+    background: linear-gradient(
+      0deg,
+      #100d16fa 0%,
+      #100d16db 65%,
+      #100d1680 100%
+    );
+  }
+
+  .featured-background {
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    object-position: center 15%;
+  }
+}
+
+.featured-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid #ffffff55;
+  border-radius: 50%;
+  background: #17131d99;
+  color: #fff;
+}
+.featured-arrow--previous { left: 12px; }
+.featured-arrow--next { right: 12px; }
+.featured-arrow svg { width: 22px; height: 22px; }
+.featured-arrow:hover:not(:disabled) { background: #64527e; border-color: #c4b5fd; }
+.featured-dots {
+  position: absolute;
+  right: 76px;
+  bottom: 24px;
+  display: flex;
+  gap: 4px;
+}
+.featured-dot {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+}
+.featured-dot span {
+  width: 8px;
+  height: 8px;
+  border: 1px solid #ddd5e8;
+  border-radius: 50%;
+}
+.featured-dot[aria-pressed="true"] span { background: #c4b5fd; border-color: #c4b5fd; }
+.featured-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.featured-motion-enter-active,
+.featured-motion-leave-active {
+  transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.featured-motion-leave-active { pointer-events: none; }
+.featured-motion-enter-from {
+  transform: translateX(calc(var(--slide-direction) * 100%));
+}
+.featured-motion-leave-to {
+  transform: translateX(calc(var(--slide-direction) * -100%));
+}
+@media (max-width: 600px) {
+  .featured-arrow { width: 32px; height: 40px; }
+  .featured-arrow--previous { left: 6px; }
+  .featured-arrow--next { right: 6px; }
+  .featured-dots { right: 48px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .featured-motion-enter-active, .featured-motion-leave-active { transition: none; }
+  .featured-motion-enter-from, .featured-motion-leave-to { transform: none; }
+}
 
 main {
   max-width: 1200px;
