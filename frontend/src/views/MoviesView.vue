@@ -20,6 +20,7 @@ interface Movie {
   ageRating: string
   poster: string | null
   trailer: string | null
+  hasUpcomingSessions: boolean
 }
 
 interface Session {
@@ -48,6 +49,10 @@ const topMovies = computed(() => {
 })
 const search = ref('')
 const selectedGenres = ref<string[]>([])
+const catalogMode = ref<'all' | 'now'>('all')
+const nowShowingCount = computed(() =>
+  movies.value.filter((movie) => movie.hasUpcomingSessions).length,
+)
 
 function toggleGenre(genre: string) {
   if (selectedGenres.value.includes(genre)) {
@@ -166,7 +171,8 @@ const filteredMovies = computed(() => {
     selectedGenres.value.includes(genre),
   )
 
-    return matchesSearch && matchesCategory
+    const matchesSchedule = catalogMode.value === 'all' || movie.hasUpcomingSessions
+    return matchesSearch && matchesCategory && matchesSchedule
   })
 })
 
@@ -286,6 +292,7 @@ async function toggleSessions(movieId: number) {
 async function showFeaturedSessions(movieId: number) {
   // Reveal a movie even when the active search/category excludes it.
   if (!filteredMovies.value.some((movie) => movie.id === movieId)) {
+    catalogMode.value = 'all'
     search.value = ''
     selectedGenres.value = []
   }
@@ -422,7 +429,21 @@ onMounted(loadMovies)
     </article>
   </div>
 </section>
-    <h2 id="movies" tabindex="-1">Movies</h2>
+    <section class="catalog-heading" aria-labelledby="movies">
+      <div>
+        <p class="catalog-eyebrow">FIND YOUR NEXT FILM</p>
+        <h2 id="movies" tabindex="-1">Explore the cinema</h2>
+      </div>
+      <div class="catalog-switch" role="group" aria-label="Movie availability">
+        <button type="button" :aria-pressed="catalogMode === 'all'" @click="catalogMode = 'all'">
+          All movies <span>{{ movies.length }}</span>
+        </button>
+        <button type="button" :aria-pressed="catalogMode === 'now'" @click="catalogMode = 'now'">
+          <i class="now-dot" aria-hidden="true"></i>
+          Now showing <span>{{ nowShowingCount }}</span>
+        </button>
+      </div>
+    </section>
 
     <div class="movie-search">
       <label for="movie-search">Search movies:</label>
@@ -466,8 +487,10 @@ onMounted(loadMovies)
       {{ error }}
     </p>
 
-    <p v-else-if="filteredMovies.length === 0">
-      No movies found.
+    <p v-else-if="filteredMovies.length === 0" class="catalog-empty" role="status">
+      {{ catalogMode === 'now'
+        ? 'No upcoming screenings match your selection. Try other genres, clear the search, or choose All movies.'
+        : 'No movies match your selection. Try other genres or clear the search.' }}
     </p>
 
     <div v-else class="movies-carousel">
@@ -479,7 +502,7 @@ onMounted(loadMovies)
         </svg>
       </button>
 
-      <div id="movies-track" ::key="JSON.stringify([search, selectedGenres])" ref="moviesTrack" class="movies-grid" tabindex="0" role="region"
+      <div id="movies-track" :key="JSON.stringify([search, selectedGenres, catalogMode])" ref="moviesTrack" class="movies-grid" tabindex="0" role="region"
         aria-label="Афиша фильмов">
         <div v-for="(page, pageIndex) in moviePages" :key="pageIndex" class="movies-page">
           <article v-for="movie in page" :key="movie.id" class="movie-card"
@@ -898,6 +921,67 @@ main {
   align-items: center;
   gap: 10px;
   margin-bottom: 16px;
+}
+
+.catalog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin: 48px 0 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #34303e;
+}
+.catalog-eyebrow {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #b8a6d9;
+}
+.catalog-heading h2 { margin: 0; font-size: clamp(24px, 3vw, 32px); }
+.catalog-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid #38313f;
+  border-radius: 16px;
+  background: #16121c;
+}
+.catalog-switch button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #b9b3c4;
+  border-radius: 11px;
+  font-size: 14px;
+}
+.catalog-switch button[aria-pressed="true"] {
+  background: #c4b5fd;
+  color: #20152f;
+  border-color: #c4b5fd;
+}
+.catalog-switch button[aria-pressed="true"]:hover { background: #ded5ff; }
+.catalog-switch button span {
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: #ffffff12;
+  font-size: 12px;
+}
+.catalog-switch button[aria-pressed="true"] span { background: #20152f15; }
+.now-dot { width: 6px; height: 6px; border-radius: 50%; background: #89e4bd; }
+.catalog-switch button[aria-pressed="true"] .now-dot { background: #226b4a; }
+.catalog-empty {
+  padding: 32px;
+  border: 1px dashed #51425f;
+  border-radius: 16px;
+  color: #c8c0d4;
+  line-height: 1.6;
 }
 
 .movies-carousel {

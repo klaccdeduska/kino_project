@@ -20,6 +20,7 @@ interface MovieRow extends RowDataPacket {
   ageRating: string;
   poster: string | null;
   trailer: string | null;
+  hasUpcomingSessions?: number;
 }
 
 interface SessionRow extends RowDataPacket {
@@ -53,9 +54,20 @@ const SELECT_MOVIES = `
 export class MoviesController {
   @Get()
   async findAll() {
-    const [rows] = await pool.query<MovieRow[]>(`${SELECT_MOVIES} ORDER BY id`);
+    const [rows] = await pool.query<MovieRow[]>(`
+      SELECT catalog.*, EXISTS (
+        SELECT 1 FROM sessions AS s
+        JOIN halls AS h ON h.id = s.hall_id
+        WHERE s.movie_id = catalog.id AND s.starts_at > NOW()
+      ) AS hasUpcomingSessions
+      FROM (${SELECT_MOVIES}) AS catalog
+      ORDER BY catalog.id
+    `);
 
-    return rows;
+    return rows.map((movie) => ({
+      ...movie,
+      hasUpcomingSessions: Boolean(movie.hasUpcomingSessions),
+    }));
   }
 
   @Get(':id/sessions/:sessionId')
