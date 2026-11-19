@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import movieBackdrops from '../data/movieBackdrops.json'
 import {
   formatSessionDate,
   formatSessionWeek,
@@ -33,6 +34,16 @@ interface Session {
   language: string
   subtitles: string | null
   format: string
+}
+
+const backdrops: Record<string, { src: string; position: string }> = movieBackdrops
+
+function getMovieBackdrop(movie: Movie) {
+  return backdrops[movie.title]?.src ?? movie.poster
+}
+
+function getMovieBackdropPosition(movie: Movie) {
+  return backdrops[movie.title]?.position ?? 'center center'
 }
 
 const movies = ref<Movie[]>([])
@@ -329,9 +340,10 @@ onMounted(loadMovies)
       <div :key="featuredMovie.id" class="featured-slide" role="group" aria-roledescription="slide"
         :aria-label="`${featuredIndex + 1} of ${featuredMovies.length}`">
       <img
-        v-if="featuredMovie.poster"
+        v-if="getMovieBackdrop(featuredMovie)"
         class="featured-background"
-        :src="featuredMovie.poster"
+        :src="getMovieBackdrop(featuredMovie) ?? undefined"
+        :style="{ objectPosition: getMovieBackdropPosition(featuredMovie) }"
         alt=""
         fetchpriority="high"
       />
@@ -400,9 +412,10 @@ onMounted(loadMovies)
     >
       <div class="top-movie-image">
         <img
-          v-if="movie.poster"
-          :src="movie.poster"
-          :alt="movie.title + ' poster'"
+          v-if="getMovieBackdrop(movie)"
+          :src="getMovieBackdrop(movie) ?? undefined"
+          :style="{ objectPosition: getMovieBackdropPosition(movie) }"
+          :alt="movie.title + ' scene'"
           loading="lazy"
         />
         <span v-else class="top-movie-placeholder">No poster</span>
