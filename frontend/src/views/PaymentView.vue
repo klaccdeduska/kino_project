@@ -9,6 +9,8 @@ import {
   formatPrice,
   getSeatPriceCents,
   purchase,
+  setTicketCategory,
+  ticketCategories,
 } from '../stores/booking'
 
 const router = useRouter()
@@ -20,11 +22,22 @@ const draft = computed(() => {
 const { remainingSeconds, remainingTime, updateTime } = useCheckoutTimer(() => draft.value?.expiresAt)
 
 const totalCents = computed(
-  () => calculateTotalCents(draft.value?.seats ?? []),
+  () => calculateTotalCents(draft.value?.seats ?? [], draft.value?.categories),
 )
 
 const submitting = ref(false)
 const error = ref('')
+
+function changeCategory(seat: string, event: Event) {
+  const select = event.currentTarget as HTMLSelectElement
+  try {
+    setTicketCategory(seat, select.value)
+    error.value = ''
+  } catch {
+    error.value = 'Could not save the ticket category. Please try again.'
+  }
+  select.value = draft.value?.categories?.[seat] ?? 'adult'
+}
 
 async function pay() {
   if (submitting.value) return
@@ -95,8 +108,18 @@ async function pay() {
           <ul class="seat-list">
             <li v-for="seat in draft.seats" :key="seat">
               <span class="seat-marker" aria-hidden="true">{{ seat.split('-')[0] }}</span>
-              <div class="seat-info"><strong>Row {{ seat.split('-')[0] }} · Seat {{ seat.split('-')[1] }}</strong><span>{{ seat.startsWith('E-') ? 'VIP' : seat.startsWith('D-') ? 'Double' : 'Standard' }}</span></div>
-              <strong class="seat-price">{{ formatPrice(getSeatPriceCents(seat)) }}</strong>
+              <div class="seat-info">
+                <strong>Row {{ seat.split('-')[0] }} · Seat {{ seat.split('-')[1] }}</strong>
+                <span>{{ seat.startsWith('E-') ? 'VIP' : seat.startsWith('D-') ? 'Double' : 'Standard' }}</span>
+                <select class="ticket-category" :aria-label="`Ticket category for seat ${seat}`"
+                  :value="draft.categories?.[seat] ?? 'adult'" :disabled="submitting || !remainingSeconds"
+                  @change="changeCategory(seat, $event)">
+                  <option v-for="(category, key) in ticketCategories" :key="key" :value="key">
+                    {{ category.label }} · {{ formatPrice(getSeatPriceCents(seat, key)) }}
+                  </option>
+                </select>
+              </div>
+              <strong class="seat-price">{{ formatPrice(getSeatPriceCents(seat, draft.categories?.[seat])) }}</strong>
             </li>
           </ul>
           <p class="edit-note">Want a different view? <RouterLink :to="{ name: 'booking', params: { movieId: draft.movieId }, query: { sessionId: draft.sessionId } }">Change your seats →</RouterLink></p>
@@ -164,6 +187,7 @@ h2 { margin: 22px 0 12px; font-size: 25px; overflow-wrap: anywhere; }
 .seat-info { display: flex; flex: 1; flex-direction: column; gap: 7px; font-size: 13px; }
 .seat-info > span { color: #a99dbb; font-size: 11px; }
 .seat-price { white-space: nowrap; font-size: 14px; }
+.ticket-category { max-width: 100%; margin-top: 6px; padding: 6px; border: 1px solid #645078; border-radius: 6px; background: #241c30; color: #f2f2f3; font: inherit; }
 .edit-note { margin: 24px 0 0; color: #a99dbb; font-size: 12px; line-height: 1.8; }
 .edit-note a { display: inline-block; color: #d1bfff; margin-left: 4px; text-underline-offset: 4px; }
 .summary-card h2 { margin-top: 12px; font-size: 22px; }

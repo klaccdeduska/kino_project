@@ -15,11 +15,22 @@ export interface Order extends Booking {
   id: string
   purchasedAt: string
   totalCents: number
+  tickets?: Record<string, { category: TicketCategory; priceCents: number }>
 }
 
 interface CheckoutDraft extends Booking {
   expiresAt: number
+  categories?: Partial<Record<string, TicketCategory>>
 }
+
+export const ticketCategories = {
+  adult: { label: 'Adult', discountCents: 0 },
+  child: { label: 'Child', discountCents: 200 },
+  student: { label: 'Student', discountCents: 100 },
+  senior: { label: 'Senior', discountCents: 200 },
+} as const
+
+type TicketCategory = keyof typeof ticketCategories
 
 const checkoutDurationMs = 10 * 60 * 1000
 
@@ -35,17 +46,16 @@ interface State {
   orders: Order[]
 }
 
-export function getSeatPriceCents(seatId: string): number {
+export function getSeatPriceCents(seatId: string, category: TicketCategory = 'adult'): number {
   const row = seatId.split('-')[0]
 
-  return row === 'E'
-    ? vipTicketPriceCents
-    : ticketPriceCents
+  const basePrice = row === 'E' ? vipTicketPriceCents : ticketPriceCents
+  return basePrice - ticketCategories[category].discountCents
 }
 
-export function calculateTotalCents(seats: string[]): number {
+export function calculateTotalCents(seats: string[], categories?: CheckoutDraft['categories']): number {
   return seats.reduce(
-    (total, seatId) => total + getSeatPriceCents(seatId),
+    (total, seatId) => total + getSeatPriceCents(seatId, categories?.[seatId]),
     0,
   )
 }
@@ -85,16 +95,29 @@ export function occupiedSeats(sessionId: number) {
 export function startCheckout(booking: Booking) {
   const previous = bookingState.value.draft
   const now = Date.now()
+  const active = previous?.sessionId === booking.sessionId && previous.expiresAt > now
+    ? previous
+    : null
 
   save({
     ...bookingState.value,
     draft: {
       ...booking,
       seats: [...booking.seats],
-      expiresAt: previous?.sessionId === booking.sessionId && previous.expiresAt > now
-        ? previous.expiresAt
-        : now + checkoutDurationMs,
+      expiresAt: active?.expiresAt ?? now + checkoutDurationMs,
+      categories: Object.fromEntries(booking.seats.map(seat => [seat, active?.categories?.[seat] ?? 'adult'])),
     },
+  })
+}
+
+export function setTicketCategory(seat: string, value: string) {
+  const draft = bookingState.value.draft
+  if (!draft || !draft.seats.includes(seat) || !(draft.expiresAt > Date.now())) return
+  if (!Object.prototype.hasOwnProperty.call(ticketCategories, value)) return
+
+  save({
+    ...bookingState.value,
+    draft: { ...draft, categories: { ...draft.categories, [seat]: value as TicketCategory } },
   })
 }
 
@@ -105,7 +128,7 @@ export function purchase(): Order {
     throw new Error('Please choose your seats first.')
   }
 
-  const { expiresAt, ...booking } = draft
+  const { expiresAt, categories, ...booking } = draft
   if (!(expiresAt > Date.now())) {
     throw new Error('Checkout time expired. Please choose your seats again.')
   }
@@ -118,12 +141,17 @@ export function purchase(): Order {
     )
   }
 
+  const tickets = Object.fromEntries(draft.seats.map(seat => {
+    const category = categories?.[seat] ?? 'adult'
+    return [seat, { category, priceCents: getSeatPriceCents(seat, category) }]
+  }))
   const order: Order = {
     ...booking,
     seats: [...draft.seats],
     id: crypto.randomUUID(),
     purchasedAt: new Date().toISOString(),
-    totalCents: calculateTotalCents(draft.seats),
+    tickets,
+    totalCents: calculateTotalCents(draft.seats, categories),
   }
 
   save({

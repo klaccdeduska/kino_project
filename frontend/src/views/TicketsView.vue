@@ -7,6 +7,7 @@ import {
   bookingState,
   formatPrice,
   getSeatPriceCents,
+  ticketCategories,
 } from '../stores/booking'
 
 const route = useRoute()
@@ -27,7 +28,14 @@ const tickets = computed(() => {
     qr.addData(reference)
     qr.make()
 
-    return { seat, reference, qrImage: qr.createDataURL(4, 16) }
+    const ticket = currentOrder.tickets?.[seat]
+    return {
+      seat,
+      reference,
+      qrImage: qr.createDataURL(4, 16),
+      category: ticketCategories[ticket?.category ?? 'adult'].label,
+      priceCents: ticket?.priceCents ?? getSeatPriceCents(seat),
+    }
   })
 })
 
@@ -64,7 +72,7 @@ function printTickets() {
 
         <div class="section-heading print-action"><h2>Your tickets</h2><span>One ticket. One great seat.</span></div>
         <div class="ticket-list">
-          <article v-for="({ seat, reference, qrImage }, index) in tickets" :key="reference" class="ticket" :aria-label="`Ticket ${index + 1}, row ${seat.split('-')[0]}, seat ${seat.split('-')[1]}`">
+          <article v-for="({ seat, reference, qrImage, category, priceCents }, index) in tickets" :key="reference" class="ticket" :aria-label="`Ticket ${index + 1}, row ${seat.split('-')[0]}, seat ${seat.split('-')[1]}`">
             <div class="ticket-main">
               <div class="ticket-heading"><span class="eyebrow">BUBLIKI CINEMA</span><span class="category-badge">{{ seat.startsWith('E-') ? 'VIP' : seat.startsWith('D-') ? 'Double' : 'Standard' }}</span></div>
               <h2>{{ order.movieTitle }}</h2>
@@ -77,7 +85,7 @@ function printTickets() {
               <span class="stub-label">YOUR SEAT</span>
               <strong class="seat-number">{{ seat.split('-')[0] }}<span>{{ seat.split('-')[1] }}</span></strong>
               <span class="stub-hall">{{ order.hallName }}</span>
-              <strong class="ticket-price">Price: {{ formatPrice(getSeatPriceCents(seat)) }}</strong>
+              <strong class="ticket-price">{{ category }} · {{ formatPrice(priceCents) }}</strong>
               <img class="ticket-qr" :src="qrImage" :alt="`QR code for ticket ${index + 1}`" width="120" height="120">
               <span class="ticket-count">{{ String(index + 1).padStart(2, '0') }} / {{ String(order.seats.length).padStart(2, '0') }}</span>
             </div>
