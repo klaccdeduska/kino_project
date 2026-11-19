@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import {
   formatSessionDate,
@@ -39,6 +39,8 @@ const search = ref('')
 const loading = ref(true)
 const error = ref('')
 const moviesTrack = ref<HTMLDivElement | null>(null)
+const sessionsPanel = ref<HTMLElement | null>(null)
+const featuredMovie = computed(() => movies.value.find(movie => movie.poster) ?? movies.value[0])
 
 const sessionsMovieId = ref<number | null>(null)
 const sessions = ref<Session[]>([])
@@ -185,6 +187,13 @@ async function toggleSessions(movieId: number) {
   }
 }
 
+async function showFeaturedSessions(movieId: number) {
+  if (sessionsMovieId.value !== movieId) void toggleSessions(movieId)
+  await nextTick()
+  sessionsPanel.value?.focus({ preventScroll: true })
+  sessionsPanel.value?.scrollIntoView({ block: 'start' })
+}
+
 onMounted(loadMovies)
 </script>
 
@@ -196,6 +205,18 @@ onMounted(loadMovies)
         <span> | </span>
         <RouterLink to="/register">Sign up</RouterLink>
       </nav>
+    <section v-if="featuredMovie" class="featured-movie" aria-labelledby="featured-title">
+      <div class="featured-copy">
+        <p class="featured-meta">{{ featuredMovie.genre }} · {{ featuredMovie.duration }} min · {{ featuredMovie.ageRating }}</p>
+        <h2 id="featured-title">{{ featuredMovie.title }}</h2>
+        <p class="featured-description">{{ featuredMovie.description }}</p>
+        <button type="button" class="featured-action" @click="showFeaturedSessions(featuredMovie.id)">
+          Show sessions
+        </button>
+      </div>
+      <img v-if="featuredMovie.poster" class="featured-poster" :src="featuredMovie.poster" alt=""
+        width="200" height="300" fetchpriority="high" />
+    </section>
     <h2>Movies</h2>
 
     <div class="movie-search">
@@ -259,7 +280,7 @@ onMounted(loadMovies)
         </svg>
       </button>
     </div>
-    <div v-if="sessionsMovie" class="movie-sessions">
+    <div v-if="sessionsMovie" ref="sessionsPanel" class="movie-sessions" tabindex="-1">
       <h3>Sessions: {{ sessionsMovie.title }}</h3>
 
       <div class="session-dates" role="group" aria-label="Session weeks">
@@ -332,6 +353,27 @@ onMounted(loadMovies)
 </template>
 
 <style scoped>
+.featured-movie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(20px, 5vw, 64px);
+  margin: 24px 0 32px;
+  padding: clamp(20px, 5vw, 56px);
+  border: 1px solid #4a3d5b;
+  border-radius: 20px;
+  background: radial-gradient(ellipse at right top, #392856, transparent 72%), #19141f;
+}
+
+.featured-copy { flex: 1 1 300px; min-width: 0; }
+.featured-meta { margin: 0; color: #c4b5fd; font-size: 14px; }
+.featured-copy h2 { margin: 12px 0; font-size: clamp(30px, 5vw, 58px); line-height: 1.1; overflow-wrap: anywhere; }
+.featured-description { max-width: 56ch; margin: 0 0 24px; color: #e0d8ea; line-height: 1.6; }
+.featured-poster { display: block; width: min(200px, 100%); height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 12px; }
+.featured-action { padding: 12px 18px; border: 1px solid #c4b5fd; border-radius: 10px; background: #c4b5fd; color: #20152f; font: inherit; font-weight: 700; cursor: pointer; }
+.featured-action:hover { background: #d8cdff; }
+
 main {
   max-width: 1200px;
   margin: 0 auto;
