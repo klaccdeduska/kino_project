@@ -36,6 +36,17 @@ interface Session {
 
 const movies = ref<Movie[]>([])
 const search = ref('')
+const selectedGenres = ref<string[]>([])
+
+function toggleGenre(genre: string) {
+  if (selectedGenres.value.includes(genre)) {
+    selectedGenres.value = selectedGenres.value.filter(
+      (item) => item !== genre,
+    )
+  } else {
+    selectedGenres.value.push(genre)
+  }
+}
 const loading = ref(true)
 const error = ref('')
 const moviesTrack = ref<HTMLDivElement | null>(null)
@@ -66,13 +77,38 @@ const sessionsMovie = computed(() => {
     (movie) => movie.id === sessionsMovieId.value
   )
 })
+function getGenres(genre: string) {
+  return genre
+    .split(/[\/,]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+const genres = computed(() => {
+  const allGenres = movies.value.flatMap((movie) =>
+    getGenres(movie.genre),
+  )
+
+  return [...new Set(allGenres)].sort()
+})
 
 const filteredMovies = computed(() => {
   const query = search.value.trim().toLowerCase()
 
-  return movies.value.filter((movie) =>
-    movie.title.toLowerCase().includes(query),
+  return movies.value.filter((movie) => {
+    const matchesSearch =
+      movie.title.toLowerCase().includes(query) ||
+      movie.genre.toLowerCase().includes(query) ||
+      movie.description.toLowerCase().includes(query)
+
+    const matchesCategory =
+  selectedGenres.value.length === 0 ||
+  getGenres(movie.genre).some((genre) =>
+    selectedGenres.value.includes(genre),
   )
+
+    return matchesSearch && matchesCategory
+  })
 })
 
 const moviePages = computed(() => {
@@ -225,8 +261,39 @@ onMounted(loadMovies)
 
     <div class="movie-search">
       <label for="movie-search">Search movies:</label>
-      <input id="movie-search" v-model="search" type="search" placeholder="Movie title" />
+      <input
+  id="movie-search"
+  v-model="search"
+  type="search"
+  placeholder="Movie title or genre"
+/>
     </div>
+<div
+  v-if="!loading && !error"
+  class="genre-filters"
+  role="group"
+  aria-label="Filter by genres"
+>
+  <button
+    type="button"
+    class="genre-button"
+    :aria-pressed="selectedGenres.length === 0"
+    @click="selectedGenres = []"
+  >
+    All genres
+  </button>
+
+  <button
+    v-for="genre in genres"
+    :key="genre"
+    type="button"
+    class="genre-button"
+    :aria-pressed="selectedGenres.includes(genre)"
+    @click="toggleGenre(genre)"
+  >
+    {{ genre }}
+  </button>
+</div>
 
     <p v-if="loading" role="status">Loading movies...</p>
 
@@ -247,7 +314,7 @@ onMounted(loadMovies)
         </svg>
       </button>
 
-      <div id="movies-track" :key="search" ref="moviesTrack" class="movies-grid" tabindex="0" role="region"
+      <div id="movies-track" ::key="JSON.stringify([search, selectedGenres])" ref="moviesTrack" class="movies-grid" tabindex="0" role="region"
         aria-label="Афиша фильмов">
         <div v-for="(page, pageIndex) in moviePages" :key="pageIndex" class="movies-page">
           <article v-for="movie in page" :key="movie.id" class="movie-card">
@@ -361,6 +428,39 @@ onMounted(loadMovies)
   border-bottom: 1px solid #342b40;
   background: #17131d;
   color: #f2f2f3;
+}
+
+.genre-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0;
+}
+
+.genre-filters .genre-button {
+  padding: 8px 16px;
+  border: 1px solid #50505c;
+  border-radius: 999px;
+  background: #1c1c23;
+  color: #c5c5cf;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.genre-filters .genre-button:hover {
+  background: #30283f;
+  border-color: #b6a0ff;
+}
+
+.genre-filters .genre-button[aria-pressed="true"] {
+  background: #c4b5fd;
+  border-color: #c4b5fd;
+  color: #171320;
+  box-shadow: 0 0 0 2px #c4b5fd26;
+}
+
+.genre-filters .genre-button[aria-pressed="true"]:hover {
+  background: #d4c8ff;
 }
 
 .site-navigation {
