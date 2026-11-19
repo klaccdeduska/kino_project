@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import CheckoutCountdown from '../components/CheckoutCountdown.vue'
 import { formatSessionDate } from '../utils/session'
 import { useCheckoutTimer } from '../utils/checkoutTimer'
 import {
@@ -84,6 +85,9 @@ async function pay() {
         <RouterLink v-else to="/" class="back-button">← Back to movies</RouterLink>
       </header>
 
+      <CheckoutCountdown v-if="draft && remainingSeconds"
+        :time="remainingTime" :urgent="remainingSeconds <= 60" />
+
       <nav class="steps" aria-label="Booking progress">
         <span class="step complete"><b>✓</b> Choose seats</span>
         <span class="step active" aria-current="step"><b>02</b> Payment</span>
@@ -131,8 +135,7 @@ async function pay() {
           <div class="summary-line"><span>Tickets: {{ draft.seats.length }}</span><span>{{ formatPrice(totalCents) }}</span></div>
           <div class="total"><span>Total</span><strong>{{ formatPrice(totalCents) }}</strong></div>
           <div class="demo-notice"><span class="demo-icon" aria-hidden="true">✦</span><div><strong>Just a demo. Enjoy the experience.</strong><p>No money will be charged and no card details are required.</p></div></div>
-          <p v-if="remainingSeconds" class="confirmation-note" role="timer">Time left to confirm {{ remainingTime }}</p>
-          <p v-else class="error-message" role="alert">
+          <p v-if="!remainingSeconds" class="error-message" role="alert">
             Checkout time expired.
             <RouterLink :to="{ name: 'booking', params: { movieId: draft.movieId }, query: { sessionId: draft.sessionId } }">Choose your seats again</RouterLink>
           </p>

@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import SeatPicker from '../components/SeatPicker.vue'
+import CheckoutCountdown from '../components/CheckoutCountdown.vue'
 import { bookingState, occupiedSeats, startCheckout } from '../stores/booking'
 import { useCheckoutTimer } from '../utils/checkoutTimer'
 import {
@@ -140,6 +141,9 @@ watch(
         <RouterLink to="/" class="back-button"><span aria-hidden="true">←</span> Back to movies</RouterLink>
       </header>
 
+      <CheckoutCountdown v-if="!loading && !error && session && remainingSeconds"
+        :time="remainingTime" :urgent="remainingSeconds <= 60" />
+
       <nav class="booking-steps" aria-label="Booking progress">
         <span class="step active" aria-current="step"><b>01</b> Choose seats</span>
         <span class="step"><b>02</b> Payment</span>
@@ -178,7 +182,6 @@ watch(
 
         <p v-if="checkoutError" class="checkout-error" role="alert">{{ checkoutError }}</p>
         <template v-if="remainingSeconds">
-          <p class="booking-timer" role="timer">Time left to confirm <strong>{{ remainingTime }}</strong></p>
           <SeatPicker :key="`${session.movieId}-${session.id}`" :occupied-seats="occupiedSeats(session.id)"
             :hall-name="session.hallName"
             :initial-seats="draft?.seats"
@@ -199,7 +202,6 @@ watch(
 <style scoped>
 .booking-page { min-height: 100vh; padding: 28px 24px 40px; background: radial-gradient(ellipse at 80% 0%, #39275540, transparent 55%), #0d0d0f; color: #f2f2f3; }
 .booking-shell { max-width: 1100px; margin: auto; }
-.booking-timer { margin: 0 0 16px; color: #d7c6ff; font-variant-numeric: tabular-nums; }
 .state-card button { cursor: pointer; }
 .booking-topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 28px; border-bottom: 1px solid #ffffff12; }
 .brand { color: #fff; text-decoration: none; font-size: 20px; font-weight: 900; letter-spacing: 2px; }
