@@ -177,10 +177,10 @@ const filteredMovies = computed(() => {
       movie.description.toLowerCase().includes(query)
 
     const matchesCategory =
-  selectedGenres.value.length === 0 ||
-  getGenres(movie.genre).some((genre) =>
-    selectedGenres.value.includes(genre),
-  )
+      selectedGenres.value.length === 0 ||
+      getGenres(movie.genre).some((genre) =>
+        selectedGenres.value.includes(genre),
+      )
 
     const matchesSchedule = catalogMode.value === 'all' || movie.hasUpcomingSessions
     return matchesSearch && matchesCategory && matchesSchedule
@@ -328,40 +328,43 @@ onMounted(loadMovies)
       <h1 class="site-brand"><a href="#top">BUBLIKI<span>CINEMA</span></a></h1>
       <a class="catalog-link" href="#movies">Movies</a>
       <div class="account-links">
-        <RouterLink class="sign-in" to="/login">Sign in</RouterLink>
-        <RouterLink class="sign-up" to="/register">Sign up</RouterLink>
+        <RouterLink class="sign-in" to="/my-tickets">
+          My tickets
+        </RouterLink>
+        <RouterLink class="sign-in" to="/login">
+          Sign in
+        </RouterLink>
+        <RouterLink class="sign-up" to="/register">
+          Sign up
+        </RouterLink>
       </div>
     </nav>
   </header>
   <main>
     <section v-if="featuredMovie" class="featured-movie" aria-label="Featured movies" aria-roledescription="carousel"
       :style="{ '--slide-direction': featuredDirection }">
-      <Transition name="featured-motion" @after-enter="featuredMoving = false" @enter-cancelled="featuredMoving = false">
-      <div :key="featuredMovie.id" class="featured-slide" role="group" aria-roledescription="slide"
-        :aria-label="`${featuredIndex + 1} of ${featuredMovies.length}`">
-      <img
-        v-if="getMovieBackdrop(featuredMovie)"
-        class="featured-background"
-        :src="getMovieBackdrop(featuredMovie) ?? undefined"
-        :style="{ objectPosition: getMovieBackdropPosition(featuredMovie) }"
-        alt=""
-        fetchpriority="high"
-      />
-      <div class="featured-copy">
-        <span class="featured-label">Featured movie</span>
-        <h2 id="featured-title">{{ featuredMovie.title }}</h2>
-        <p class="featured-meta">{{ featuredMovie.genre }} · {{ featuredMovie.duration }} min</p>
-        <div class="featured-badges">
-          <span>{{ featuredMovie.ageRating }}</span>
-          <span>{{ featuredMovie.releaseYear }}</span>
+      <Transition name="featured-motion" @after-enter="featuredMoving = false"
+        @enter-cancelled="featuredMoving = false">
+        <div :key="featuredMovie.id" class="featured-slide" role="group" aria-roledescription="slide"
+          :aria-label="`${featuredIndex + 1} of ${featuredMovies.length}`">
+          <img v-if="getMovieBackdrop(featuredMovie)" class="featured-background"
+            :src="getMovieBackdrop(featuredMovie) ?? undefined"
+            :style="{ objectPosition: getMovieBackdropPosition(featuredMovie) }" alt="" fetchpriority="high" />
+          <div class="featured-copy">
+            <span class="featured-label">Featured movie</span>
+            <h2 id="featured-title">{{ featuredMovie.title }}</h2>
+            <p class="featured-meta">{{ featuredMovie.genre }} · {{ featuredMovie.duration }} min</p>
+            <div class="featured-badges">
+              <span>{{ featuredMovie.ageRating }}</span>
+              <span>{{ featuredMovie.releaseYear }}</span>
+            </div>
+            <p class="featured-description">{{ featuredMovie.description }}</p>
+          </div>
+          <button type="button" class="featured-action" @click="showFeaturedSessions(featuredMovie.id)">
+            Show sessions
+            <span aria-hidden="true">→</span>
+          </button>
         </div>
-        <p class="featured-description">{{ featuredMovie.description }}</p>
-      </div>
-        <button type="button" class="featured-action" @click="showFeaturedSessions(featuredMovie.id)">
-          Show sessions
-          <span aria-hidden="true">→</span>
-        </button>
-      </div>
       </Transition>
 
       <template v-if="featuredMovies.length > 1">
@@ -384,64 +387,57 @@ onMounted(loadMovies)
           </button>
         </div>
       </template>
-      <p class="featured-status" role="status">{{ featuredIndex + 1 }} / {{ featuredMovies.length }} — {{ featuredMovie.title }}</p>
+      <p class="featured-status" role="status">{{ featuredIndex + 1 }} / {{ featuredMovies.length }} — {{
+        featuredMovie.title
+        }}</p>
     </section>
-    <section
-  v-if="topMovies.length > 0"
-  class="top-movies"
-  aria-labelledby="top-movies-title"
->
-  <div class="top-movies-heading">
-    <h2 id="top-movies-title">Top movies</h2>
-    <span>Our picks</span>
-    <div class="top-movies-controls" role="group" aria-label="Browse top movies">
-      <button type="button" aria-label="Previous top movie" aria-controls="top-movies-track" @click="scrollTopMovies(-1)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg>
-      </button>
-      <button type="button" aria-label="Next top movie" aria-controls="top-movies-track" @click="scrollTopMovies(1)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
-      </button>
-    </div>
-  </div>
-
-  <div id="top-movies-track" ref="topMoviesTrack" class="top-movies-track" tabindex="0" role="region" aria-label="Top movies">
-    <article
-      v-for="movie in topMovies"
-      :key="movie.id"
-      class="top-movie-card"
-    >
-      <div class="top-movie-image">
-        <img
-          v-if="getMovieBackdrop(movie)"
-          :src="getMovieBackdrop(movie) ?? undefined"
-          :style="{ objectPosition: getMovieBackdropPosition(movie) }"
-          :alt="movie.title + ' scene'"
-          loading="lazy"
-        />
-        <span v-else class="top-movie-placeholder">No poster</span>
-
-        <span class="top-movie-rating">
-          {{ movie.ageRating }}
-        </span>
-      </div>
-
-      <div class="top-movie-info">
-        <h3>
-          <button
-            type="button"
-            class="top-movie-title"
-            @click="showFeaturedSessions(movie.id)"
-          >
-            {{ movie.title }}
+    <section v-if="topMovies.length > 0" class="top-movies" aria-labelledby="top-movies-title">
+      <div class="top-movies-heading">
+        <h2 id="top-movies-title">Top movies</h2>
+        <span>Our picks</span>
+        <div class="top-movies-controls" role="group" aria-label="Browse top movies">
+          <button type="button" aria-label="Previous top movie" aria-controls="top-movies-track"
+            @click="scrollTopMovies(-1)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="m15 6-6 6 6 6" />
+            </svg>
           </button>
-        </h3>
-
-        <p class="top-movie-director">{{ movie.director }}</p>
-        <p>{{ movie.genre }}</p>
+          <button type="button" aria-label="Next top movie" aria-controls="top-movies-track"
+            @click="scrollTopMovies(1)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="m9 6 6 6-6 6" />
+            </svg>
+          </button>
+        </div>
       </div>
-    </article>
-  </div>
-</section>
+
+      <div id="top-movies-track" ref="topMoviesTrack" class="top-movies-track" tabindex="0" role="region"
+        aria-label="Top movies">
+        <article v-for="movie in topMovies" :key="movie.id" class="top-movie-card">
+          <div class="top-movie-image">
+            <img v-if="getMovieBackdrop(movie)" :src="getMovieBackdrop(movie) ?? undefined"
+              :style="{ objectPosition: getMovieBackdropPosition(movie) }" :alt="movie.title + ' scene'"
+              loading="lazy" />
+            <span v-else class="top-movie-placeholder">No poster</span>
+
+            <span class="top-movie-rating">
+              {{ movie.ageRating }}
+            </span>
+          </div>
+
+          <div class="top-movie-info">
+            <h3>
+              <button type="button" class="top-movie-title" @click="showFeaturedSessions(movie.id)">
+                {{ movie.title }}
+              </button>
+            </h3>
+
+            <p class="top-movie-director">{{ movie.director }}</p>
+            <p>{{ movie.genre }}</p>
+          </div>
+        </article>
+      </div>
+    </section>
     <section class="catalog-heading" aria-labelledby="movies">
       <div>
         <p class="catalog-eyebrow">FIND YOUR NEXT FILM</p>
@@ -460,39 +456,19 @@ onMounted(loadMovies)
 
     <div class="movie-search">
       <label for="movie-search">Search movies:</label>
-      <input
-  id="movie-search"
-  v-model="search"
-  type="search"
-  placeholder="Movie title or genre"
-/>
+      <input id="movie-search" v-model="search" type="search" placeholder="Movie title or genre" />
     </div>
-<div
-  v-if="!loading && !error"
-  class="genre-filters"
-  role="group"
-  aria-label="Filter by genres"
->
-  <button
-    type="button"
-    class="genre-button"
-    :aria-pressed="selectedGenres.length === 0"
-    @click="selectedGenres = []"
-  >
-    All genres
-  </button>
+    <div v-if="!loading && !error" class="genre-filters" role="group" aria-label="Filter by genres">
+      <button type="button" class="genre-button" :aria-pressed="selectedGenres.length === 0"
+        @click="selectedGenres = []">
+        All genres
+      </button>
 
-  <button
-    v-for="genre in genres"
-    :key="genre"
-    type="button"
-    class="genre-button"
-    :aria-pressed="selectedGenres.includes(genre)"
-    @click="toggleGenre(genre)"
-  >
-    {{ genre }}
-  </button>
-</div>
+      <button v-for="genre in genres" :key="genre" type="button" class="genre-button"
+        :aria-pressed="selectedGenres.includes(genre)" @click="toggleGenre(genre)">
+        {{ genre }}
+      </button>
+    </div>
 
     <p v-if="loading" role="status">Loading movies...</p>
 
@@ -515,11 +491,10 @@ onMounted(loadMovies)
         </svg>
       </button>
 
-      <div id="movies-track" :key="JSON.stringify([search, selectedGenres, catalogMode])" ref="moviesTrack" class="movies-grid" tabindex="0" role="region"
-        aria-label="Афиша фильмов">
+      <div id="movies-track" :key="JSON.stringify([search, selectedGenres, catalogMode])" ref="moviesTrack"
+        class="movies-grid" tabindex="0" role="region" aria-label="Афиша фильмов">
         <div v-for="(page, pageIndex) in moviePages" :key="pageIndex" class="movies-page">
-          <article v-for="movie in page" :key="movie.id" class="movie-card"
-            :id="`movie-card-${movie.id}`" tabindex="-1"
+          <article v-for="movie in page" :key="movie.id" class="movie-card" :id="`movie-card-${movie.id}`" tabindex="-1"
             :class="{ 'movie-card--selected': sessionsMovieId === movie.id }">
             <img v-if="movie.poster" :src="movie.poster" :alt="movie.title + ' poster'" class="movie-poster" />
 
@@ -587,8 +562,8 @@ onMounted(loadMovies)
           selectedDate
             ? 'No sessions available for this date.'
             : selectedWeek
-            ? 'No sessions available for this week.'
-            : 'No sessions available.'
+              ? 'No sessions available for this week.'
+              : 'No sessions available.'
         }}
       </p>
 
@@ -677,15 +652,59 @@ onMounted(loadMovies)
   padding: 12px 24px;
 }
 
-.site-brand { margin: 0; font-size: 24px; letter-spacing: 2px; }
-.site-brand span { display: block; margin-top: 2px; color: #c4b5fd; font-size: 9px; letter-spacing: 5px; }
-.site-navigation a { color: inherit; text-decoration: none; }
-.site-navigation a:focus-visible { outline: 2px solid #c4b5fd; outline-offset: 4px; }
-.catalog-link, .account-links a { padding: 10px 12px; border-radius: 8px; font-size: 14px; white-space: nowrap; }
-.catalog-link:hover, .sign-in:hover { background: #2c2337; }
-.account-links { display: flex; justify-self: end; align-items: center; gap: 8px; }
-.account-links .sign-up { background: #c4b5fd; color: #20152f; font-weight: 700; }
-.account-links .sign-up:hover { background: #d8cdff; }
+.site-brand {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: 2px;
+}
+
+.site-brand span {
+  display: block;
+  margin-top: 2px;
+  color: #c4b5fd;
+  font-size: 9px;
+  letter-spacing: 5px;
+}
+
+.site-navigation a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-navigation a:focus-visible {
+  outline: 2px solid #c4b5fd;
+  outline-offset: 4px;
+}
+
+.catalog-link,
+.account-links a {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.catalog-link:hover,
+.sign-in:hover {
+  background: #2c2337;
+}
+
+.account-links {
+  display: flex;
+  justify-self: end;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-links .sign-up {
+  background: #c4b5fd;
+  color: #20152f;
+  font-weight: 700;
+}
+
+.account-links .sign-up:hover {
+  background: #d8cdff;
+}
 
 .featured-movie {
   position: relative;
@@ -728,12 +747,10 @@ onMounted(loadMovies)
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(
-      90deg,
+    linear-gradient(90deg,
       #100d16e6 0%,
       #100d16a6 45%,
-      #100d1626 100%
-    ),
+      #100d1626 100%),
     linear-gradient(0deg, #100d16e6, transparent 70%);
 }
 
@@ -828,12 +845,10 @@ onMounted(loadMovies)
   }
 
   .featured-slide::before {
-    background: linear-gradient(
-      0deg,
-      #100d16fa 0%,
-      #100d16db 65%,
-      #100d1680 100%
-    );
+    background: linear-gradient(0deg,
+        #100d16fa 0%,
+        #100d16db 65%,
+        #100d1680 100%);
   }
 
   .featured-background {
@@ -860,10 +875,25 @@ onMounted(loadMovies)
   background: #17131d99;
   color: #fff;
 }
-.featured-arrow--previous { left: 12px; }
-.featured-arrow--next { right: 12px; }
-.featured-arrow svg { width: 22px; height: 22px; }
-.featured-arrow:hover:not(:disabled) { background: #64527e; border-color: #c4b5fd; }
+
+.featured-arrow--previous {
+  left: 12px;
+}
+
+.featured-arrow--next {
+  right: 12px;
+}
+
+.featured-arrow svg {
+  width: 22px;
+  height: 22px;
+}
+
+.featured-arrow:hover:not(:disabled) {
+  background: #64527e;
+  border-color: #c4b5fd;
+}
+
 .featured-dots {
   position: absolute;
   right: 76px;
@@ -871,6 +901,7 @@ onMounted(loadMovies)
   display: flex;
   gap: 4px;
 }
+
 .featured-dot {
   display: grid;
   place-items: center;
@@ -881,13 +912,19 @@ onMounted(loadMovies)
   border-radius: 50%;
   background: transparent;
 }
+
 .featured-dot span {
   width: 8px;
   height: 8px;
   border: 1px solid #ddd5e8;
   border-radius: 50%;
 }
-.featured-dot[aria-pressed="true"] span { background: #c4b5fd; border-color: #c4b5fd; }
+
+.featured-dot[aria-pressed="true"] span {
+  background: #c4b5fd;
+  border-color: #c4b5fd;
+}
+
 .featured-status {
   position: absolute;
   width: 1px;
@@ -898,26 +935,54 @@ onMounted(loadMovies)
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
 .featured-motion-enter-active,
 .featured-motion-leave-active {
   transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-.featured-motion-leave-active { pointer-events: none; }
+
+.featured-motion-leave-active {
+  pointer-events: none;
+}
+
 .featured-motion-enter-from {
   transform: translateX(calc(var(--slide-direction) * 100%));
 }
+
 .featured-motion-leave-to {
   transform: translateX(calc(var(--slide-direction) * -100%));
 }
+
 @media (max-width: 600px) {
-  .featured-arrow { width: 32px; height: 40px; }
-  .featured-arrow--previous { left: 6px; }
-  .featured-arrow--next { right: 6px; }
-  .featured-dots { right: 48px; }
+  .featured-arrow {
+    width: 32px;
+    height: 40px;
+  }
+
+  .featured-arrow--previous {
+    left: 6px;
+  }
+
+  .featured-arrow--next {
+    right: 6px;
+  }
+
+  .featured-dots {
+    right: 48px;
+  }
 }
+
 @media (prefers-reduced-motion: reduce) {
-  .featured-motion-enter-active, .featured-motion-leave-active { transition: none; }
-  .featured-motion-enter-from, .featured-motion-leave-to { transform: none; }
+
+  .featured-motion-enter-active,
+  .featured-motion-leave-active {
+    transition: none;
+  }
+
+  .featured-motion-enter-from,
+  .featured-motion-leave-to {
+    transform: none;
+  }
 }
 
 main {
@@ -946,6 +1011,7 @@ main {
   padding-bottom: 24px;
   border-bottom: 1px solid #34303e;
 }
+
 .catalog-eyebrow {
   margin: 0 0 8px;
   font-size: 11px;
@@ -953,7 +1019,12 @@ main {
   letter-spacing: 2px;
   color: #b8a6d9;
 }
-.catalog-heading h2 { margin: 0; font-size: clamp(24px, 3vw, 32px); }
+
+.catalog-heading h2 {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 32px);
+}
+
 .catalog-switch {
   display: flex;
   flex-wrap: wrap;
@@ -963,6 +1034,7 @@ main {
   border-radius: 16px;
   background: #16121c;
 }
+
 .catalog-switch button {
   display: inline-flex;
   align-items: center;
@@ -974,21 +1046,39 @@ main {
   border-radius: 11px;
   font-size: 14px;
 }
+
 .catalog-switch button[aria-pressed="true"] {
   background: #c4b5fd;
   color: #20152f;
   border-color: #c4b5fd;
 }
-.catalog-switch button[aria-pressed="true"]:hover { background: #ded5ff; }
+
+.catalog-switch button[aria-pressed="true"]:hover {
+  background: #ded5ff;
+}
+
 .catalog-switch button span {
   padding: 2px 7px;
   border-radius: 6px;
   background: #ffffff12;
   font-size: 12px;
 }
-.catalog-switch button[aria-pressed="true"] span { background: #20152f15; }
-.now-dot { width: 6px; height: 6px; border-radius: 50%; background: #89e4bd; }
-.catalog-switch button[aria-pressed="true"] .now-dot { background: #226b4a; }
+
+.catalog-switch button[aria-pressed="true"] span {
+  background: #20152f15;
+}
+
+.now-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #89e4bd;
+}
+
+.catalog-switch button[aria-pressed="true"] .now-dot {
+  background: #226b4a;
+}
+
 .catalog-empty {
   padding: 32px;
   border: 1px dashed #51425f;
@@ -1246,12 +1336,34 @@ a {
 }
 
 @media (max-width: 600px) {
-  .site-navigation { grid-template-columns: auto 1fr auto; gap: 4px; padding: 10px 12px; }
-  .site-brand { font-size: 18px; }
-  .site-brand span { font-size: 8px; letter-spacing: 3px; }
-  .catalog-link { justify-self: center; }
-  .catalog-link, .account-links a { padding: 8px 6px; font-size: 12px; }
-  .account-links { gap: 4px; }
+  .site-navigation {
+    grid-template-columns: auto 1fr auto;
+    gap: 4px;
+    padding: 10px 12px;
+  }
+
+  .site-brand {
+    font-size: 18px;
+  }
+
+  .site-brand span {
+    font-size: 8px;
+    letter-spacing: 3px;
+  }
+
+  .catalog-link {
+    justify-self: center;
+  }
+
+  .catalog-link,
+  .account-links a {
+    padding: 8px 6px;
+    font-size: 12px;
+  }
+
+  .account-links {
+    gap: 4px;
+  }
 
   main {
     padding: 12px;
@@ -1312,6 +1424,7 @@ a {
   gap: 0;
   margin-left: auto;
 }
+
 .top-movies-controls button {
   display: grid;
   place-items: center;
@@ -1320,15 +1433,31 @@ a {
   padding: 0;
   border-radius: 0;
 }
-.top-movies-controls button:first-child { border-radius: 10px 0 0 10px; }
-.top-movies-controls button:last-child { border-radius: 0 10px 10px 0; border-left: 0; }
-.top-movies-controls svg { width: 22px; height: 22px; }
+
+.top-movies-controls button:first-child {
+  border-radius: 10px 0 0 10px;
+}
+
+.top-movies-controls button:last-child {
+  border-radius: 0 10px 10px 0;
+  border-left: 0;
+}
+
+.top-movies-controls svg {
+  width: 22px;
+  height: 22px;
+}
+
 .movie-card--selected {
   border-color: #c4b5fd;
   box-shadow: inset 0 0 0 1px #c4b5fd;
 }
+
 .movie-card:focus-visible,
-.top-movies-track:focus-visible { outline: 2px solid #c4b5fd; outline-offset: -3px; }
+.top-movies-track:focus-visible {
+  outline: 2px solid #c4b5fd;
+  outline-offset: -3px;
+}
 
 .top-movies-track {
   display: grid;
