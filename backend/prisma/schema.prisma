@@ -21,8 +21,45 @@ model Movie {
   poster      String?  @map("poster_url") @db.VarChar(1000)
   trailer     String?  @map("trailer_url") @db.VarChar(1000)
   reviews     Review[]
+  sessions    Session[]
 
   @@map("movies")
+}
+
+model Hall {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique(map: "uq_halls_name") @db.VarChar(100)
+  sessions Session[]
+
+  @@map("halls")
+}
+
+model Session {
+  id        Int      @id @default(autoincrement())
+  movieId   Int      @map("movie_id")
+  startsAt  DateTime @map("starts_at") @db.DateTime(0)
+  hallId    Int      @map("hall_id")
+  language  String   @default("English") @db.VarChar(50)
+  subtitles String?  @db.VarChar(100)
+  format    String   @default("2D") @db.VarChar(20)
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "sessions_ibfk_1")
+  hall      Hall     @relation(fields: [hallId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_sessions_hall")
+
+  @@unique([hallId, startsAt], map: "uq_sessions_hall_start")
+  @@index([movieId], map: "movie_id")
+  @@map("sessions")
+}
+
+model User {
+  id           Int       @id @default(autoincrement()) @db.UnsignedInt
+  email        String    @unique(map: "email") @db.VarChar(255)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  name         String?   @db.VarChar(100)
+  dateOfBirth  DateTime? @map("date_of_birth") @db.Date
+  language     String    @default("et") @db.VarChar(5)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+
+  @@map("users")
 }
 
 model Review {

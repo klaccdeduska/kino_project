@@ -116,10 +116,7 @@ DATABASE_URL="mysql://kino_user:change_me@127.0.0.1:3308/kino"
 The Redis container remains available at `redis://127.0.0.1:6380`.
 Session availability is read directly from MariaDB so started sessions cannot stay cached.
 
-Compose imports **movies, halls, sessions, users and reviews** automatically on a
-fresh volume. No manual SQL import is needed. On an existing volume, `npm.cmd run
-setup` creates missing tables and preserves existing data. The following manual
-commands are only a recovery option for an older volume with missing tables:
+On a fresh volume, run the automatic setup above to apply Prisma migrations and load demo data. The SQL commands below are for older volumes only.
 
 ```powershell
 docker compose -f docker-compose.movies.yml cp database/halls.sql db:/tmp/halls.sql
@@ -216,26 +213,22 @@ indexes reject existing duplicates; review those manually. Never delete the Dock
 volume to apply an upgrade. Already saved browser tickets retain their old times.
 After SQL changes, restart the backend; session availability is queried directly without cached results.
 
-Prisma currently covers only movies/reviews; the running API uses `mysql2`.
-Setup creates reviews from its checked-in Prisma migration. For the optional Prisma exercise with the
-existing `movies` table and **no Prisma migration history**:
+Prisma defines all five application tables. The API continues to query MariaDB via mysql2. Setup applies migrations automatically on new databases. Older SQL installations can be enrolled without resetting their data. See [the migration procedure](#adopting-prisma-migrations-on-an-existing-volume).
+
+### Adopting Prisma migrations on an existing volume
+
+Back up the database and finish any older session-column upgrades above first. Check that the existing movies and reviews tables match migrations 0_init and 1_add_reviews. In the backend directory, mark each existing, matching table’s migration as applied only if Prisma has not already recorded it. If reviews is missing, skip its resolve command so deploy creates it.
 
 ```powershell
-# Run this baseline command once, only after checking the existing movies schema:
 cd backend
 npx.cmd prisma migrate resolve --applied 0_init
-# If reviews already exists, baseline it too before deploy:
 npx.cmd prisma migrate resolve --applied 1_add_reviews
 npm.cmd run prisma:deploy
-npm.cmd run prisma:generate
-npm.cmd run prisma:seed
 npm.cmd run prisma:status
 cd ..
 ```
 
-If migration history already exists, skip `resolve`. The seed preserves existing
-movies and ensures movies 1–3 exist. For schema details, a truly empty database,
-Prisma Studio and development migrations, see [backend guide](backend/README.md#english).
+Migration 2 adds missing profile columns and scheduling indexes. If MariaDB reports duplicate halls or time slots, reconcile the duplicates before retrying. Keep the existing volume and use deploy for the shared schema.
 
 ### Checks and troubleshooting
 
@@ -382,9 +375,7 @@ DATABASE_URL="mysql://kino_user:change_me@127.0.0.1:3308/kino"
 Redise konteiner on aadressil `redis://127.0.0.1:6380`.
 Seansside saadavust loetakse otse MariaDB-st.
 
-Uue volume'i puhul impordib Compose automaatselt **movies, halls, sessions, users ja reviews**.
-Käsitsi importi pole vaja. Järgmised käsud on ainult vanema volume'i puuduvate tabelite taastamiseks.
-Puuduvate tabelitega vanema volume'i jaoks kopeeri vajalikud SQL-failid:
+Uue volume’i puhul käivita ülaltoodud automaatne seadistus, mis rakendab Prisma migratsioonid ja lisab näidisandmed. Allolevad SQL-käsud on mõeldud vanemate volume’ide jaoks.
 
 ```powershell
 docker compose -f docker-compose.movies.yml cp database/halls.sql db:/tmp/halls.sql
@@ -481,25 +472,9 @@ indeksid lükkavad duplikaadid tagasi; need tuleb käsitsi üle vaadata. Uuendam
 ära kustuta Docker volume'it. Brauseris varem salvestatud piletitel jääb vana aeg.
 Seansside saadavust kontrollitakse otse andmebaasist ilma vahemäluta.
 
-Prisma hõlmab praegu ainult filme/arvustusi; API kasutab `mysql2`.
-Setup loob ka reviews-tabeli. Valikuline Prisma harjutus olemasoleva
-`movies` tabeliga, kui **Prisma migratsiooniajalugu veel puudub**:
-
-```powershell
-# Baseline ainult üks kord ja pärast movies tabeli skeemi kontrollimist:
-cd backend
-npx.cmd prisma migrate resolve --applied 0_init
-npx.cmd prisma migrate resolve --applied 1_add_reviews
-npm.cmd run prisma:deploy
-npm.cmd run prisma:generate
-npm.cmd run prisma:seed
-npm.cmd run prisma:status
-cd ..
-```
-
-Kui migratsiooniajalugu on olemas, jäta `resolve` vahele. Seed säilitab olemasolevad
-filmid ja tagab filmide 1–3 olemasolu. Täpsemad skeemi, tühja andmebaasi, Studio ja
-arendusmigratsioonide juhised: [backendi juhend](backend/README.md#eesti).
+Prisma määratleb kõik viis tabelit. API teeb päringuid endiselt `mysql2` kaudu.
+Uue andmebaasi puhul rakendab `setup` migratsioonid automaatselt. Olemasoleva
+andmebaasi puhul järgi [Prisma migratsioonidele ülemineku juhendit](#adopting-prisma-migrations-on-an-existing-volume).
 
 ### Kontrollid ja veaotsing
 
@@ -647,9 +622,7 @@ DATABASE_URL="mysql://kino_user:change_me@127.0.0.1:3308/kino"
 Контейнер Redis доступен по `redis://127.0.0.1:6380`.
 Доступность сеансов проверяется напрямую в MariaDB без кеша.
 
-На новом volume Compose автоматически создаёт **movies, halls, sessions, users и reviews**.
-Ручной импорт не нужен. Следующие команды нужны только для восстановления отсутствующих таблиц в старом volume.
-Для старого volume с отсутствующими таблицами скопируйте нужные SQL-файлы:
+На новом томе запустите автоматическую установку выше. Она применяет миграции Prisma и загружает демоданные. SQL-команды ниже предназначены для старых томов.
 
 ```powershell
 docker compose -f docker-compose.movies.yml cp database/halls.sql db:/tmp/halls.sql
@@ -747,25 +720,7 @@ exit;
 Не удаляйте Docker volume ради обновления. У ранее сохранённых в браузере билетов
 останется старое время. Доступность сеансов проверяется напрямую в базе без кеша.
 
-Prisma пока описывает только фильмы/отзывы; API использует `mysql2`.
-Setup также создаёт reviews из существующей Prisma-миграции. Необязательная практика Prisma для базы
-с существующей таблицей `movies` и **без истории Prisma-миграций**:
-
-```powershell
-# Baseline выполняется один раз, после проверки схемы существующей movies:
-cd backend
-npx.cmd prisma migrate resolve --applied 0_init
-npx.cmd prisma migrate resolve --applied 1_add_reviews
-npm.cmd run prisma:deploy
-npm.cmd run prisma:generate
-npm.cmd run prisma:seed
-npm.cmd run prisma:status
-cd ..
-```
-
-Если история миграций уже есть, пропустите `resolve`. Seed сохраняет существующие
-фильмы и добавляет фильмы 1–3, если их нет. О схеме, полностью пустой базе, Prisma
-Studio и миграциях разработки: [руководство backend](backend/README.md#русский).
+Prisma описывает все пять таблиц приложения. API по-прежнему обращается к MariaDB через `mysql2`. На новой базе `setup` автоматически применяет миграции. Для существующей базы см. [переход на миграции Prisma](#adopting-prisma-migrations-on-an-existing-volume).
 
 ### Проверки и устранение ошибок
 

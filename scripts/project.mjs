@@ -19,10 +19,10 @@ function launch(program, args, options = {}) {
     : spawn(program, args, options);
 }
 
-async function run(program, args, cwd = root) {
+async function run(program, args, cwd = root, env = process.env) {
   console.log(`> ${program} ${args.join(' ')}`);
   await new Promise((resolve, reject) => {
-    const child = launch(program, args, { cwd, stdio: 'inherit' });
+    const child = launch(program, args, { cwd, env, stdio: 'inherit' });
     child.once('error', reject);
     child.once('exit', (code) => code === 0 ? resolve() : reject(new Error(`${program} failed (${code}).`)));
   });
@@ -65,27 +65,25 @@ async function database(prepare = false, refresh = false) {
   }
   try {
     if (prepare) {
-      for (const table of ['movies', 'halls', 'sessions', 'users']) {
-        const [rows] = await connection.execute(
-          'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', [table],
-        );
-        if (rows.length) {
-          console.log(`Keeping existing table: ${table}`);
-          continue;
-        }
-        if (table === 'sessions') {
-          const [halls] = await connection.query('SELECT id FROM halls WHERE id IN (1, 2)');
-          if (halls.length !== 2) throw new Error('Demo sessions require halls 1 and 2. See README before importing into a customized database.');
-        }
-        console.log(`Creating missing table: ${table}`);
-        await connection.query(readFileSync(path.join(root, `database/${table}.sql`), 'utf8'));
-      }
-      const [reviews] = await connection.execute(
-        'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', ['reviews'],
+      const [tables] = await connection.query(
+        "SELECT TABLE_NAME AS name FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('movies', 'halls', 'sessions', 'users', 'reviews', '_prisma_migrations')",
       );
-      if (!reviews.length) {
-        await connection.query(readFileSync(path.join(root, 'backend/prisma/migrations/1_add_reviews/migration.sql'), 'utf8'));
-        console.log('Created missing reviews table from the Prisma migration.');
+      const existing = new Set(tables.map(table => table.name));
+      if (existing.size === 0 || existing.has('_prisma_migrations')) {
+        const user = encodeURIComponent(config.DB_USER || 'kino_user');
+        const password = encodeURIComponent(config.DB_PASSWORD || '');
+        const host = config.DB_HOST || '127.0.0.1';
+        await run('npm', ['run', 'prisma:deploy'], path.join(root, 'backend'), {
+          ...process.env, DATABASE_URL: `mysql://${user}:${password}@${host}:3308/kino`,
+        });
+        const movies = readFileSync(path.join(root, 'database/movies.sql'), 'utf8');
+        const halls = readFileSync(path.join(root, 'database/halls.sql'), 'utf8');
+        await connection.query(movies.slice(movies.indexOf('INSERT INTO movies')).replace(/ON DUPLICATE KEY UPDATE[\s\S]+$/, 'ON DUPLICATE KEY UPDATE id = id;'));
+        await connection.query(halls.slice(halls.indexOf('INSERT INTO halls')));
+        const [sessions] = await connection.query('SELECT id FROM sessions LIMIT 1');
+        if (sessions.length === 0) await refreshSessions(connection);
+      } else {
+        await prepareLegacyDatabase(connection);
       }
     }
     const [columns] = await connection.query('SHOW COLUMNS FROM sessions');
@@ -98,6 +96,31 @@ async function database(prepare = false, refresh = false) {
     console.log('Database is ready.');
   } finally {
     await connection.end();
+  }
+}
+
+async function prepareLegacyDatabase(connection) {
+  for (const table of ['movies', 'halls', 'sessions', 'users']) {
+    const [rows] = await connection.execute(
+      'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', [table],
+    );
+    if (rows.length) {
+      console.log(`Keeping existing table: ${table}`);
+      continue;
+    }
+    if (table === 'sessions') {
+      const [halls] = await connection.query('SELECT id FROM halls WHERE id IN (1, 2)');
+      if (halls.length !== 2) throw new Error('Demo sessions require halls 1 and 2. See README before importing into a customized database.');
+    }
+    console.log(`Creating missing table: ${table}`);
+    await connection.query(readFileSync(path.join(root, `database/${table}.sql`), 'utf8'));
+  }
+  const [reviews] = await connection.execute(
+    'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', ['reviews'],
+  );
+  if (!reviews.length) {
+    await connection.query(readFileSync(path.join(root, 'backend/prisma/migrations/1_add_reviews/migration.sql'), 'utf8'));
+    console.log('Created missing reviews table from the Prisma migration.');
   }
 }
 
