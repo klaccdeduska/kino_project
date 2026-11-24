@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import { ApiError, getSession } from '../api'
 import CheckoutCountdown from '../components/CheckoutCountdown.vue'
 import { formatSessionDate } from '../utils/session'
 import { useCheckoutTimer } from '../utils/checkoutTimer'
@@ -51,12 +52,11 @@ async function pay() {
     if (!selection) throw new Error('Please choose your seats first.')
     updateTime()
     if (!remainingSeconds.value) return
-    const response = await fetch(`/api/movies/${selection.movieId}/sessions/${selection.sessionId}`)
-    if (!response.ok) {
-      throw new Error(response.status === 404
+    await getSession(selection.movieId, selection.sessionId).catch((error: unknown) => {
+      throw new Error(error instanceof ApiError && error.status === 404
         ? 'Session is no longer available. Please choose another session.'
         : 'Could not verify the session. Please try again.')
-    }
+    })
     if (draft.value !== selection) throw new Error('Your selection changed. Please try again.')
     const order = purchase()
 

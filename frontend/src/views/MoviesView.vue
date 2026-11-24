@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import { getMovies, getSessions, type CatalogMovie as Movie, type Session } from '../api'
 import movieBackdrops from '../data/movieBackdrops.json'
 import {
   formatSessionDate,
@@ -14,32 +15,6 @@ onMounted(() => {
   void loadMovies()
   void loadCurrentUser()
 })
-
-interface Movie {
-  id: number
-  title: string
-  genre: string
-  duration: number
-  description: string
-  releaseYear: number
-  director: string
-  ageRating: string
-  poster: string | null
-  trailer: string | null
-  hasUpcomingSessions: boolean
-}
-
-interface Session {
-  id: number
-  movieId: number
-  date: string
-  time: string
-  hallId: number
-  hallName: string
-  language: string
-  subtitles: string | null
-  format: string
-}
 
 const backdrops: Record<string, { src: string; position: string }> = movieBackdrops
 
@@ -249,13 +224,7 @@ async function loadMovies() {
   error.value = ''
 
   try {
-    const response = await fetch('/api/movies')
-
-    if (!response.ok) {
-      throw new Error('Failed to load movies')
-    }
-
-    movies.value = await response.json()
+    movies.value = await getMovies()
     selectFeaturedMovies()
   } catch (err) {
     error.value = 'Could not load movies from the server.'
@@ -279,15 +248,7 @@ async function toggleSessions(movieId: number) {
   sessionsLoading.value = true
 
   try {
-    const response = await fetch(
-      `/api/movies/${movieId}/sessions`,
-    )
-
-    if (!response.ok) {
-      throw new Error('Failed to load sessions')
-    }
-
-    const data: Session[] = await response.json()
+    const data = await getSessions(movieId)
 
     if (sessionsMovieId.value === movieId) {
       sessions.value = data

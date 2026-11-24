@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { ApiError, getMovie, getSession, type Session } from '../api'
 import SeatPicker from '../components/SeatPicker.vue'
 import CheckoutCountdown from '../components/CheckoutCountdown.vue'
 import { bookingState, occupiedSeats, startCheckout } from '../stores/booking'
@@ -10,18 +11,6 @@ import {
   getSessionEndTime,
   endsNextDay,
 } from '../utils/session'
-
-interface Session {
-  id: number
-  movieId: number
-  date: string
-  time: string
-  hallId: number
-  hallName: string
-  language: string
-  subtitles: string | null
-  format: string
-}
 
 const route = useRoute()
 const router = useRouter()
@@ -80,23 +69,16 @@ async function loadSession() {
       return
     }
 
-    const response = await fetch(
-      `/api/movies/${encodeURIComponent(movieId)}/sessions/${encodeURIComponent(sessionId)}`
-    )
-
-    if (!response.ok) {
-      if (response.status === 400 || response.status === 404) {
+    const data = await getSession(movieId, sessionId).catch((error: unknown) => {
+      if (error instanceof ApiError && (error.status === 400 || error.status === 404)) {
         throw new Error('Session not found. Please choose another session.')
       }
 
       throw new Error('Could not load the session.')
-    }
-
-    const data: Session = await response.json()
-    const movieResponse = await fetch(`/api/movies/${encodeURIComponent(movieId)}`)
-    if (!movieResponse.ok) throw new Error('Could not load the movie.')
-    const movie: { title: string; duration: number } =
-      await movieResponse.json()
+    })
+    const movie = await getMovie(movieId).catch(() => {
+      throw new Error('Could not load the movie.')
+    })
 
     if (
       String(route.params.movieId) === movieId &&

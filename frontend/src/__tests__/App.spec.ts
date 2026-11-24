@@ -11,7 +11,7 @@ import { bookingState, startCheckout, purchase, occupiedSeats } from '../stores/
 afterEach(() => vi.unstubAllGlobals())
 
 beforeEach(() => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }))
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }))
   localStorage.clear()
   bookingState.value = { draft: null, orders: [] }
 })
