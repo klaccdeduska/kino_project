@@ -26,12 +26,17 @@ JOIN movies mb ON mb.id = b.movie_id
 WHERE a.starts_at < DATE_ADD(b.starts_at, INTERVAL mb.duration MINUTE)
 AND b.starts_at < DATE_ADD(a.starts_at, INTERVAL ma.duration MINUTE);`;
 const relativeSeed = file('sessions');
-const seed = relativeSeed.replace('CURDATE() + INTERVAL 1 DAY', "DATE('2026-10-21')").replace(/TIMESTAMP\(@demo_start \+ INTERVAL (\d+) DAY, '([\d:]+)'\)/g, (_, day, time) => `'2026-10-${21 + Number(day)} ${time}'`);
+// The legacy migration targets the original 22 screenings starting on 21 October.
+// Reuse the current weekly slots, anchored to those original dates for this fixture.
+const seed = relativeSeed
+  .replace(/SET @demo_monday = .*;/, "SET @demo_monday = DATE('2026-10-21');")
+  .replace(/WHERE weeks\.week_offset \* 7 \+ slot\.day_offset >= WEEKDAY\(@demo_start\)\s+AND weeks\.week_offset \* 7 \+ slot\.day_offset < WEEKDAY\(@demo_start\) \+ 30/, 'WHERE weeks.week_offset = 0');
 try {
   sql(file('movies') + file('halls') + relativeSeed);
   assert.equal(sql(`SELECT COUNT(*) FROM ${database}.sessions WHERE starts_at <= NOW();`), '0');
   sql(`USE ${database}; DROP TABLE sessions;`);
   sql(seed);
+  assert.equal(sql(`SELECT COUNT(*) FROM ${database}.sessions;`), '22');
   assert.equal(sql(`USE ${database}; ${overlaps}`), '0');
   sql(file('halls'));
   assert.equal(sql(`SELECT COUNT(*) FROM ${database}.halls;`), '2');
@@ -46,13 +51,13 @@ SELECT movie_id, starts_at, hall_id FROM sessions LIMIT 1;`, false);
   sql(`USE ${database}; DROP TABLE sessions;
 ALTER TABLE halls DROP INDEX uq_halls_name;`);
   let old = seed.replace('  UNIQUE KEY uq_sessions_hall_start (hall_id, starts_at),', '');
-  for (const [current, previous] of [
-    ['2026-10-21 17:45:00', '2026-10-21 17:00:00'],
-    ['2026-10-22 23:20:00', '2026-10-22 20:30:00'],
-    ['2026-10-23 19:30:00', '2026-10-23 17:30:00'],
-    ['2026-10-23 22:00:00', '2026-10-23 20:00:00'],
-    ['2026-10-24 23:00:00', '2026-10-24 22:00:00'],
-  ]) old = old.replace(current, previous);
+  for (const [day, current, previous] of [
+    [0, '17:45:00', '17:00:00'],
+    [1, '23:20:00', '20:30:00'],
+    [2, '19:30:00', '17:30:00'],
+    [2, '22:00:00', '20:00:00'],
+    [3, '23:00:00', '22:00:00'],
+  ]) old = old.replace(`SELECT ${day}, '${current}'`, `SELECT ${day}, '${previous}'`);
   sql(old);
   assert.equal(sql(`USE ${database}; ${overlaps}`), '5');
   const ids = sql(`SELECT GROUP_CONCAT(id ORDER BY id) FROM ${database}.sessions;`);
