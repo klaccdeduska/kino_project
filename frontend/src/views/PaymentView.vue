@@ -83,10 +83,8 @@ async function pay() {
 <template>
   <main class="payment-page">
     <div class="payment-shell">
-      <header class="topbar">
-        <RouterLink to="/" class="brand">BUBLIKI<span>CINEMA</span></RouterLink>
+      <nav v-if="draft" class="topbar" aria-label="Checkout navigation">
         <RouterLink
-          v-if="draft"
           class="back-button"
           :to="{
             name: 'booking',
@@ -95,10 +93,7 @@ async function pay() {
           }"
           >← Back to seats</RouterLink
         >
-        <RouterLink v-else to="/" class="back-button"
-          >← Back to movies</RouterLink
-        >
-      </header>
+      </nav>
 
       <CheckoutCountdown
         v-if="draft && remainingSeconds"
@@ -264,24 +259,10 @@ async function pay() {
 .topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 16px;
   padding-bottom: 28px;
   border-bottom: 1px solid #ffffff12;
-}
-.brand {
-  color: #fff;
-  text-decoration: none;
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: 2px;
-}
-.brand span {
-  display: block;
-  margin-top: 5px;
-  font-size: 9px;
-  letter-spacing: 6px;
-  color: #b6a0ff;
 }
 .back-button {
   display: inline-flex;
@@ -620,9 +601,6 @@ footer {
   .step b {
     width: 24px;
     height: 24px;
-  }
-  .brand {
-    font-size: 16px;
   }
   .back-button {
     padding: 10px 12px;

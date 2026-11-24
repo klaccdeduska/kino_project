@@ -56,7 +56,7 @@ async function submit() {
 </script>
 
 <template>
-  <main>
+  <main class="account-page">
     <h1>{{ isRegister ? 'Create account' : 'Sign in' }}</h1>
 
     <form @submit.prevent="submit">

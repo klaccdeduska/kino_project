@@ -24,6 +24,18 @@ test('shows a film from the cinema catalogue', async ({ page }) => {
   await expect(
     page
       .locator('#movies-track')
-      .getByRole('heading', { name: movie.title, exact: true }),
+      .getByRole('heading', { name: movie.title, exact: true, level: 3 }),
+  ).toBeVisible()
+
+  const navigation = page.getByRole('navigation', { name: 'Main navigation' })
+  await navigation.getByRole('link', { name: 'Sign in' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Sign in', level: 1 }),
+  ).toBeVisible()
+
+  await navigation.getByRole('link', { name: 'Movies' }).click()
+  await expect(page).toHaveURL(/\/#movies$/)
+  await expect(
+    page.getByRole('heading', { name: 'Explore the cinema' }),
   ).toBeVisible()
 })

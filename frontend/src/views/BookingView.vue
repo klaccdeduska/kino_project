@@ -128,13 +128,6 @@ watch(() => [route.params.movieId, route.query.sessionId], loadSession, {
 <template>
   <main class="booking-page">
     <div class="booking-shell">
-      <header class="booking-topbar">
-        <RouterLink to="/" class="brand">BUBLIKI<span>CINEMA</span></RouterLink>
-        <RouterLink to="/" class="back-button"
-          ><span aria-hidden="true">←</span> Back to movies</RouterLink
-        >
-      </header>
-
       <CheckoutCountdown
         v-if="!loading && !error && session && remainingSeconds"
         :time="remainingTime"
@@ -247,28 +240,6 @@ watch(() => [route.params.movieId, route.query.sessionId], loadSession, {
 }
 .state-card button {
   cursor: pointer;
-}
-.booking-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding-bottom: 28px;
-  border-bottom: 1px solid #ffffff12;
-}
-.brand {
-  color: #fff;
-  text-decoration: none;
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: 2px;
-}
-.brand span {
-  display: block;
-  margin-top: 5px;
-  font-size: 9px;
-  letter-spacing: 6px;
-  color: #b6a0ff;
 }
 .back-button {
   display: inline-flex;
@@ -455,9 +426,6 @@ h1 {
   }
   .session-details {
     grid-template-columns: repeat(2, 1fr);
-  }
-  .brand {
-    font-size: 16px;
   }
   .back-button {
     padding: 10px 12px;

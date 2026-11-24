@@ -28,17 +28,9 @@ const past = computed(() =>
 <template>
   <main class="my-tickets-page">
     <div class="shell">
-      <header class="topbar">
-        <RouterLink to="/" class="brand">
-          BUBLIKI<span>CINEMA</span>
-        </RouterLink>
-
-        <RouterLink to="/" class="back-button"> ← Movies </RouterLink>
-      </header>
-
       <div class="page-heading">
         <p class="eyebrow">YOUR ACCOUNT</p>
-        <h1>Minu piletileht</h1>
+        <h1>My tickets</h1>
         <p>All of your purchased tickets in one place.</p>
       </div>
 
@@ -132,43 +124,6 @@ const past = computed(() =>
 .shell {
   max-width: 1100px;
   margin: auto;
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding-bottom: 28px;
-  border-bottom: 1px solid #ffffff12;
-}
-
-.brand {
-  color: #fff;
-  text-decoration: none;
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: 2px;
-}
-
-.brand span {
-  display: block;
-  margin-top: 5px;
-  font-size: 9px;
-  letter-spacing: 6px;
-  color: #b6a0ff;
-}
-
-.back-button {
-  display: inline-flex;
-  align-items: center;
-  padding: 12px 18px;
-  border: 1px solid #3c3a46;
-  border-radius: 12px;
-  background: #ffffff05;
-  color: #e4dfef;
-  text-decoration: none;
-  font-size: 13px;
 }
 
 .page-heading {

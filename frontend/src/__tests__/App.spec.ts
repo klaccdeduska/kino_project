@@ -18,7 +18,13 @@ afterEach(() => vi.unstubAllGlobals())
 beforeEach(() => {
   vi.stubGlobal(
     'fetch',
-    vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }),
+    vi.fn((url: string) =>
+      Promise.resolve(
+        url === '/api/auth/me'
+          ? { ok: false }
+          : { ok: true, json: async () => ({}) },
+      ),
+    ),
   )
   localStorage.clear()
   bookingState.value = { draft: null, orders: [] }
@@ -178,30 +184,31 @@ describe('Demo booking', () => {
   it('starts the timer on seat selection and carries the remaining time to payment', async () => {
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValueOnce({
+      vi.fn(async (url: string) => {
+        if (url === '/api/auth/me') return { ok: false }
+        return {
           ok: true,
-          json: async () => ({
-            id: 10,
-            movieId: 1,
-            hallId: 2,
-            hallName: 'Hall 2',
-            date: '2026-11-20',
-            time: '18:00',
-            format: '2D',
-            language: 'English',
-            subtitles: null,
-          }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ title: 'Test movie', duration: 100 }),
-        }),
+          json: async () =>
+            url === '/api/movies/1'
+              ? { title: 'Test movie', duration: 100 }
+              : {
+                  id: 10,
+                  movieId: 1,
+                  hallId: 2,
+                  hallName: 'Hall 2',
+                  date: '2026-11-20',
+                  time: '18:00',
+                  format: '2D',
+                  language: 'English',
+                  subtitles: null,
+                },
+        }
+      }),
     )
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
+        { path: '/', component: { template: '<p>Movies</p>' } },
         { path: '/booking/:movieId', name: 'booking', component: BookingView },
         { path: '/payment', name: 'payment', component: PaymentView },
       ],

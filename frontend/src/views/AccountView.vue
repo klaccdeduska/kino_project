@@ -49,7 +49,7 @@ async function saveProfile() {
 </script>
 
 <template>
-  <main>
+  <main class="account-page">
     <h1>My profile</h1>
 
     <p v-if="error" role="alert">{{ error }}</p>

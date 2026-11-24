@@ -9,6 +9,10 @@ import AccountView from '../views/AccountView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior(to, _from, savedPosition) {
+    if (savedPosition) return savedPosition
+    return to.hash ? { el: to.hash } : { top: 0 }
+  },
   routes: [
     { path: '/login', name: 'login', component: AuthView },
     { path: '/register', name: 'register', component: AuthView },
