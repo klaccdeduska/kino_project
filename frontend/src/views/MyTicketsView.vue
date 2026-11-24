@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import { bookingState, formatPrice } from '../stores/booking'
+import { bookingState, formatPrice } from '../booking/state'
 import { formatSessionDate } from '../utils/session'
 
 const orders = computed(() =>

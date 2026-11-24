@@ -13,7 +13,7 @@ import {
   purchase,
   setTicketCategory,
   ticketCategories,
-} from '../stores/booking'
+} from '../booking/state'
 
 const router = useRouter()
 

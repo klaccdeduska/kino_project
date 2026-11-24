@@ -5,7 +5,7 @@ import {
   formatPrice,
   ticketPriceCents,
   vipTicketPriceCents,
-} from '../stores/booking'
+} from '../booking/state'
 
 type SeatCategory = 'standard' | 'double' | 'vip'
 

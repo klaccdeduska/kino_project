@@ -4,7 +4,7 @@ Languages / Keeled / Языки: [English](#english) · [Eesti](#eesti) · [Ру
 
 ## English
 
-This template should help get you started developing with Vue 3 in Vite.
+The BUBLIKI cinema frontend uses Vue 3, TypeScript and Vite. It displays the film catalogue and showtimes, lets visitors select seats and complete demo checkout, and stores tickets in the browser. See the [project README](../README.md#english) for full setup.
 
 ### Recommended IDE Setup
 
@@ -65,7 +65,7 @@ npm run test:e2e
 # Runs the tests only on Chromium
 npm run test:e2e -- --project=chromium
 # Runs the tests of a specific file
-npm run test:e2e -- tests/example.spec.ts
+npm run test:e2e -- e2e/catalog.spec.ts
 # Runs the tests in debug mode
 npm run test:e2e -- --debug
 ```
@@ -74,7 +74,7 @@ npm run test:e2e -- --debug
 
 ## Eesti
 
-See mall aitab alustada Vue 3 arendust Vite abil.
+BUBLIKI kino kasutajaliides kasutab Vue 3, TypeScripti ja Vite’i. Siin saab sirvida filme ja seansse, valida istekohti ning teha demoostu. Piletid salvestatakse brauserisse. Seadistamise juhised leiad [projekti README-st](../README.md#eesti).
 
 ### Soovitatav arenduskeskkond
 
@@ -135,7 +135,7 @@ npm run test:e2e
 # Käivita testid ainult Chromiumis
 npm run test:e2e -- --project=chromium
 # Käivita ühe kindla faili testid
-npm run test:e2e -- tests/example.spec.ts
+npm run test:e2e -- e2e/catalog.spec.ts
 # Käivita testid silumisrežiimis
 npm run test:e2e -- --debug
 ```
@@ -144,7 +144,7 @@ npm run test:e2e -- --debug
 
 ## Русский
 
-Этот шаблон помогает начать разработку на Vue 3 с Vite.
+Интерфейс кинотеатра BUBLIKI написан на Vue 3 и TypeScript и собирается Vite. В нём можно выбрать фильм, сеанс и места, оформить демопокупку и открыть сохранённые в браузере билеты. Полная инструкция по запуску есть в [README проекта](../README.md#russian).
 
 ### Рекомендуемая среда разработки
 
@@ -205,7 +205,7 @@ npm run test:e2e
 # Запусти тесты только в Chromium
 npm run test:e2e -- --project=chromium
 # Запусти тесты из указанного файла
-npm run test:e2e -- tests/example.spec.ts
+npm run test:e2e -- e2e/catalog.spec.ts
 # Запусти тесты в режиме отладки
 npm run test:e2e -- --debug
 ```

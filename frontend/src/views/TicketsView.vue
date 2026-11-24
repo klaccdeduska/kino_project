@@ -8,7 +8,7 @@ import {
   formatPrice,
   getSeatPriceCents,
   ticketCategories,
-} from '../stores/booking'
+} from '../booking/state'
 
 const route = useRoute()
 

@@ -11,7 +11,7 @@ import {
   startCheckout,
   purchase,
   occupiedSeats,
-} from '../stores/booking'
+} from '../booking/state'
 
 afterEach(() => vi.unstubAllGlobals())
 

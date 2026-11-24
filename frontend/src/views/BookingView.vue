@@ -4,7 +4,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ApiError, getMovie, getSession, type Session } from '../api'
 import SeatPicker from '../components/SeatPicker.vue'
 import CheckoutCountdown from '../components/CheckoutCountdown.vue'
-import { bookingState, occupiedSeats, startCheckout } from '../stores/booking'
+import { bookingState, occupiedSeats, startCheckout } from '../booking/state'
 import { useCheckoutTimer } from '../utils/checkoutTimer'
 import {
   formatSessionDate,

@@ -17,7 +17,6 @@
     "format:check": "prettier --check src e2e \"*.ts\" eslint.config.mjs"
   },
   "dependencies": {
-    "pinia": "^4.0.3",
     "qrcode-generator": "^2.0.4",
     "vue": "^3.5.42",
     "vue-router": "^5.3.1"
