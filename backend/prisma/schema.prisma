@@ -9,14 +9,14 @@ datasource db {
 }
 
 model Movie {
-  // Existing SQL uses manually assigned IDs, not AUTO_INCREMENT.
-  id          Int      @id
+  id          Int      @id @default(autoincrement())
   title       String   @db.VarChar(255)
   genre       String   @db.VarChar(255)
   duration    Int      @db.UnsignedInt
   description String   @db.Text
   releaseYear Int      @map("release_year") @db.UnsignedSmallInt
   director    String   @db.VarChar(255)
+  /// Allowed cinema ratings are enforced by the database CHECK constraint.
   ageRating   String   @map("age_rating") @db.VarChar(20)
   poster      String?  @map("poster_url") @db.VarChar(1000)
   trailer     String?  @map("trailer_url") @db.VarChar(1000)
@@ -37,13 +37,14 @@ model Hall {
 model Session {
   id        Int      @id @default(autoincrement())
   movieId   Int      @map("movie_id")
+  /// Cinema local time in Europe/Tallinn, stored without a UTC offset.
   startsAt  DateTime @map("starts_at") @db.DateTime(0)
   hallId    Int      @map("hall_id")
   language  String   @default("English") @db.VarChar(50)
   subtitles String?  @db.VarChar(100)
   format    String   @default("2D") @db.VarChar(20)
-  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "sessions_ibfk_1")
-  hall      Hall     @relation(fields: [hallId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_sessions_hall")
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  hall      Hall     @relation(fields: [hallId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   @@unique([hallId, startsAt], map: "uq_sessions_hall_start")
   @@index([movieId], map: "movie_id")
@@ -51,7 +52,7 @@ model Session {
 }
 
 model User {
-  id           Int       @id @default(autoincrement()) @db.UnsignedInt
+  id           Int       @id @default(autoincrement())
   email        String    @unique(map: "email") @db.VarChar(255)
   passwordHash String    @map("password_hash") @db.VarChar(255)
   name         String?   @db.VarChar(100)

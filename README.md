@@ -230,6 +230,8 @@ cd ..
 
 Migration 2 adds missing profile columns and scheduling indexes. If MariaDB reports duplicate halls or time slots, reconcile the duplicates before retrying. Keep the existing volume and use deploy for the shared schema.
 
+Before applying migration 3 to a customized database, check that movie ratings are `All`, `6+`, `9+`, `12+`, `15+` or `18+` and that user IDs fit a signed 32-bit integer. Demo data already meets both conditions.
+
 ### Checks and troubleshooting
 
 ```powershell
