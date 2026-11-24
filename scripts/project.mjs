@@ -9,7 +9,7 @@ import { refreshSessions } from './refresh-sessions.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const windows = process.platform === 'win32';
-const compose = ['compose', '-f', 'docker-compose.movies.yml'];
+const compose = ['compose'];
 const command = process.argv[2];
 
 function launch(program, args, options = {}) {
@@ -43,7 +43,7 @@ async function database(prepare = false, refresh = false) {
       Number(config.DB_PORT || 3308) !== 3308 || (config.DB_NAME || 'kino') !== 'kino') {
     throw new Error('These commands manage the local Compose database (localhost:3308/kino). Remote/custom databases require separate setup.');
   }
-  await run('docker', [...compose, 'up', '-d']);
+  await run('docker', [...compose, 'up', '-d', '--wait']);
   const mysql = require('mysql2/promise');
   let connection;
   console.log('Waiting for MariaDB (up to 60 seconds)...');
@@ -88,7 +88,7 @@ async function database(prepare = false, refresh = false) {
     }
     const [columns] = await connection.query('SHOW COLUMNS FROM sessions');
     const missing = ['hall_id', 'language', 'subtitles', 'format'].filter(name => !columns.some(column => column.Field === name));
-    if (missing.length) throw new Error(`Database needs a manual update: sessions.${missing.join(', ')}. Follow the existing-database migrations in README.md, then rerun this command.`);
+    if (missing.length) throw new Error(`Database needs a manual update: sessions.${missing.join(', ')}. Follow docs/upgrade-notes.md, then rerun this command.`);
     if (refresh) {
       const result = await refreshSessions(connection);
       console.log(`Demo schedule: added ${result.added} upcoming sessions; skipped ${result.skipped} existing/conflicting or unavailable slots.`);

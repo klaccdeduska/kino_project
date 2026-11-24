@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 
 // Uses only a uniquely named temporary database in the local Compose container.
 const database = `kino_schedule_test_${Date.now()}`;
-const args = ['compose', '-f', 'docker-compose.movies.yml', 'exec', '-T',
+const args = ['compose', 'exec', '-T',
   'db', 'sh', '-c', 'MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb -uroot --batch --skip-column-names'];
 function sql(input, succeeds = true) {
   const result = spawnSync('docker', args, { input, encoding: 'utf8' });
