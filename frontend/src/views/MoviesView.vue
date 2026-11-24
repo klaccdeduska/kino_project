@@ -291,6 +291,10 @@ async function toggleSessions(movieId: number) {
 
     if (sessionsMovieId.value === movieId) {
       sessions.value = data
+      const firstSession = data[0]
+      if (firstSession && !selectedDate.value && selectedWeek.value === currentWeek.value) {
+        selectWeek(getSessionWeekStart(firstSession.date))
+      }
     }
   } catch (err) {
     if (sessionsMovieId.value === movieId) {
