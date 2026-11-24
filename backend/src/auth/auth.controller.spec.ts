@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import type { Server } from 'node:http';
@@ -8,6 +9,9 @@ import { pool } from '../movies/movies.database';
 
 jest.mock('../movies/movies.database', () => ({
   pool: { execute: jest.fn() },
+}));
+jest.mock('@nestjs/jwt', () => ({
+  JwtService: jest.fn(),
 }));
 jest.mock('bcryptjs', () => ({
   hash: jest.fn().mockResolvedValue('hashed'),
@@ -21,7 +25,7 @@ describe('Credentials HTTP validation', () => {
   beforeAll(async () => {
     const module = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [AuthService],
+      providers: [AuthService, JwtService],
     }).compile();
     app = module.createNestApplication<INestApplication<Server>>();
     await app.init();
