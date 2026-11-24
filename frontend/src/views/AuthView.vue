@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { loadCurrentUser } from '../stores/auth'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,6 +21,7 @@ async function submit() {
         const response = await fetch(`/api/auth/${action}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
                 email: email.value,
                 password: password.value,
@@ -40,7 +42,7 @@ async function submit() {
             return
         }
 
-        localStorage.setItem('kino-account', JSON.stringify(result))
+        await loadCurrentUser()        
         await router.push({ name: 'movies' })
     } catch (requestError) {
         error.value = requestError instanceof Error
@@ -58,23 +60,11 @@ async function submit() {
 
         <form @submit.prevent="submit">
             <label for="email">Email</label>
-            <input
-                id="email"
-                v-model.trim="email"
-                type="email"
-                autocomplete="email"
-                required
-            >
+            <input id="email" v-model.trim="email" type="email" autocomplete="email" required>
 
             <label for="password">Password</label>
-            <input
-                id="password"
-                v-model="password"
-                type="password"
-                :autocomplete="isRegister ? 'new-password' : 'current-password'"
-                minlength="8"
-                required
-            >
+            <input id="password" v-model="password" type="password"
+                :autocomplete="isRegister ? 'new-password' : 'current-password'" minlength="8" required>
 
             <p v-if="error" role="alert">{{ error }}</p>
 

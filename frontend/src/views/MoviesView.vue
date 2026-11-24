@@ -9,6 +9,11 @@ import {
   getSessionEndTime,
   endsNextDay,
 } from '../utils/session'
+import { currentUser, loadCurrentUser, logout } from '../stores/auth'
+onMounted(() => {
+  void loadMovies()
+  void loadCurrentUser()
+})
 
 interface Movie {
   id: number
@@ -319,7 +324,6 @@ async function showFeaturedSessions(movieId: number) {
   card?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' })
 }
 
-onMounted(loadMovies)
 </script>
 
 <template>
@@ -327,16 +331,15 @@ onMounted(loadMovies)
     <nav class="site-navigation" aria-label="Main navigation">
       <h1 class="site-brand"><a href="#top">BUBLIKI<span>CINEMA</span></a></h1>
       <a class="catalog-link" href="#movies">Movies</a>
-      <div class="account-links">
-        <RouterLink class="sign-in" to="/my-tickets">
-          My tickets
-        </RouterLink>
-        <RouterLink class="sign-in" to="/login">
-          Sign in
-        </RouterLink>
-        <RouterLink class="sign-up" to="/register">
-          Sign up
-        </RouterLink>
+      <div v-if="currentUser" class="account-links">
+        <RouterLink class="sign-in" to="/my-tickets">My tickets</RouterLink>
+        <RouterLink class="sign-in" to="/account">Profile</RouterLink>
+        <button type="button" class="sign-in" @click="logout">Log out</button>
+      </div>
+
+      <div v-else class="account-links">
+        <RouterLink class="sign-in" to="/login">Sign in</RouterLink>
+        <RouterLink class="sign-up" to="/register">Sign up</RouterLink>
       </div>
     </nav>
   </header>
@@ -389,7 +392,7 @@ onMounted(loadMovies)
       </template>
       <p class="featured-status" role="status">{{ featuredIndex + 1 }} / {{ featuredMovies.length }} — {{
         featuredMovie.title
-        }}</p>
+      }}</p>
     </section>
     <section v-if="topMovies.length > 0" class="top-movies" aria-labelledby="top-movies-title">
       <div class="top-movies-heading">

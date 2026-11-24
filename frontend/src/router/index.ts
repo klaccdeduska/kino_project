@@ -5,6 +5,7 @@ import PaymentView from '../views/PaymentView.vue'
 import TicketsView from '../views/TicketsView.vue'
 import AuthView from '../views/AuthView.vue'
 import MyTicketsView from '../views/MyTicketsView.vue'
+import AccountView from '../views/AccountView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -27,6 +28,11 @@ const router = createRouter({
       path: '/my-tickets',
       name: 'my-tickets',
       component: MyTicketsView,
+    },
+    {
+      path: '/account',
+      name: 'account',
+      component: AccountView,
     }
   ],
 })
