@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { existsSync, copyFileSync, readFileSync, appendFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -119,6 +120,10 @@ async function setup() {
     const url = 'mysql://' + user + ':' + password + '@' + host + ':' + port + '/' + name;
     appendFileSync(envPath, '\nDATABASE_URL=' + JSON.stringify(url) + '\n');
     console.log('Added missing DATABASE_URL to backend/.env using its DB_* settings.');
+  }
+  if (!(process.env.JWT_SECRET ?? config.JWT_SECRET)?.trim()) {
+    appendFileSync(envPath, '\nJWT_SECRET=' + randomBytes(32).toString('hex') + '\n');
+    console.log('Generated a local JWT signing secret in backend/.env.');
   }
   await database(true);
   await run('npm', ['run', 'prisma:generate'], path.join(root, 'backend'));

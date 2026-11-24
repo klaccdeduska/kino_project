@@ -93,6 +93,12 @@ docker compose -f docker-compose.movies.yml up -d
 docker compose -f docker-compose.movies.yml ps
 ```
 
+Before starting the backend, add a `JWT_SECRET` entry to `backend/.env` if you have no signing secret configured. Generate the value with the command below and keep it across restarts.
+
+```powershell
+node -p "require('node:crypto').randomBytes(32).toString('hex')"
+```
+
 Check readiness; repeat until MariaDB reports `mysqld is alive`:
 
 ```powershell
@@ -352,6 +358,12 @@ docker compose -f docker-compose.movies.yml up -d
 docker compose -f docker-compose.movies.yml ps
 ```
 
+Kui allkirjastamisvõti puudub, lisa enne backendi käivitamist faili `backend/.env` kirje `JWT_SECRET`. Genereeri väärtus alloleva käsuga ja säilita see taaskäivitustel.
+
+```powershell
+node -p "require('node:crypto').randomBytes(32).toString('hex')"
+```
+
 Korda valmiduse kontrolli, kuni vastus on `mysqld is alive`:
 
 ```powershell
@@ -609,6 +621,12 @@ npm.cmd ci --prefix frontend
 if (!(Test-Path backend/.env)) { Copy-Item backend/.env.example backend/.env }
 docker compose -f docker-compose.movies.yml up -d
 docker compose -f docker-compose.movies.yml ps
+```
+
+Если секрет для подписи ещё не настроен, перед запуском бэкенда добавьте `JWT_SECRET` в `backend/.env`. Сгенерируйте значение командой ниже и сохраняйте его между перезапусками.
+
+```powershell
+node -p "require('node:crypto').randomBytes(32).toString('hex')"
 ```
 
 Проверяйте готовность, пока MariaDB не ответит `mysqld is alive`:
