@@ -5,11 +5,7 @@ import request from 'supertest';
 import type { Server } from 'node:http';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { pool } from '../movies/movies.database';
-
-jest.mock('../movies/movies.database', () => ({
-  pool: { execute: jest.fn() },
-}));
+import { DatabaseService } from '../database/database.service';
 jest.mock('@nestjs/jwt', () => ({
   JwtService: jest.fn(),
 }));
@@ -20,12 +16,12 @@ jest.mock('bcryptjs', () => ({
 
 describe('Credentials HTTP validation', () => {
   let app: INestApplication<Server>;
-  const { execute } = pool as unknown as { execute: jest.Mock };
+  const execute = jest.fn();
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [AuthService, JwtService],
+      providers: [AuthService, JwtService, { provide: DatabaseService, useValue: { pool: { execute } } }],
     }).compile();
     app = module.createNestApplication<INestApplication<Server>>();
     await app.init();

@@ -1,12 +1,12 @@
 import { NotFoundException } from '@nestjs/common';
 import { MoviesController } from './movies.controller';
-import { pool } from './movies.database';
-
-jest.mock('./movies.database', () => ({ pool: { query: jest.fn() } }));
+import type { DatabaseService } from '../database/database.service';
+import { MoviesService } from './movies.service';
 
 describe('Upcoming sessions', () => {
-  const { query } = pool as unknown as { query: jest.Mock };
-  const controller = new MoviesController();
+  const query = jest.fn();
+  const database = { pool: { query } } as unknown as DatabaseService;
+  const controller = new MoviesController(new MoviesService(database));
   beforeEach(() => jest.resetAllMocks());
 
   it('returns upcoming-session availability as booleans in one catalog query', async () => {

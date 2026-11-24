@@ -8,7 +8,7 @@ import { JwtService } from '@nestjs/jwt'
 import { compare, hash } from 'bcryptjs'
 import type { Request, Response } from 'express'
 import type { RowDataPacket } from 'mysql2'
-import { pool } from '../movies/movies.database'
+import { DatabaseService } from '../database/database.service'
 
 interface UserRow extends RowDataPacket {
   id: number
@@ -21,7 +21,10 @@ interface UserRow extends RowDataPacket {
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly database: DatabaseService,
+  ) {}
 
   async register(email: string, password: string) {
     const normalizedEmail = email.trim().toLowerCase()
@@ -30,7 +33,7 @@ export class AuthService {
       throw new BadRequestException('Email and password are required')
     }
 
-    const [users] = await pool.execute<UserRow[]>(
+    const [users] = await this.database.pool.execute<UserRow[]>(
       'SELECT id FROM users WHERE email = ?',
       [normalizedEmail],
     )
@@ -42,7 +45,7 @@ export class AuthService {
     const passwordHash = await hash(password, 10)
 
     try {
-      await pool.execute(
+      await this.database.pool.execute(
         'INSERT INTO users (email, password_hash) VALUES (?, ?)',
         [normalizedEmail, passwordHash],
       )
@@ -68,7 +71,7 @@ export class AuthService {
       throw new BadRequestException('Email and password are required')
     }
 
-    const [users] = await pool.execute<UserRow[]>(
+    const [users] = await this.database.pool.execute<UserRow[]>(
       'SELECT id, email, password_hash, name, date_of_birth, language FROM users WHERE email = ?',
       [normalizedEmail],
     )
@@ -129,12 +132,12 @@ export class AuthService {
       dateOfBirth = body.dateOfBirth
     }
 
-    await pool.execute(
+    await this.database.pool.execute(
       'UPDATE users SET name = ?, date_of_birth = ?, language = ? WHERE id = ?',
       [name, dateOfBirth, language, current.id],
     )
 
-    const [rows] = await pool.execute<UserRow[]>(
+    const [rows] = await this.database.pool.execute<UserRow[]>(
       'SELECT id, email, name, date_of_birth, language FROM users WHERE id = ?',
       [current.id],
     )
@@ -155,7 +158,7 @@ export class AuthService {
 
     if (!payload.sub) throw new UnauthorizedException('Authentication required')
 
-    const [rows] = await pool.execute<UserRow[]>(
+    const [rows] = await this.database.pool.execute<UserRow[]>(
       'SELECT id, email, name, date_of_birth, language, password_hash FROM users WHERE id = ?',
       [payload.sub],
     )
