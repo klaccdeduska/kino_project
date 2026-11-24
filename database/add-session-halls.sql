@@ -1,6 +1,6 @@
 USE kino;
-  
-  ALTER TABLE sessions
+
+ALTER TABLE sessions
   ADD COLUMN hall_id INT NULL,
   ADD CONSTRAINT fk_sessions_hall
     FOREIGN KEY (hall_id) REFERENCES halls(id);

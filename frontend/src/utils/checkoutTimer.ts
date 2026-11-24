@@ -2,7 +2,9 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 export function useCheckoutTimer(getDeadline: () => number | undefined) {
   const now = ref(Date.now())
-  const updateTime = () => { now.value = Date.now() }
+  const updateTime = () => {
+    now.value = Date.now()
+  }
   let timer: number | undefined
 
   onMounted(() => {

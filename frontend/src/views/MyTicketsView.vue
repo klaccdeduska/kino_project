@@ -33,9 +33,7 @@ const past = computed(() =>
           BUBLIKI<span>CINEMA</span>
         </RouterLink>
 
-        <RouterLink to="/" class="back-button">
-          ← Movies
-        </RouterLink>
+        <RouterLink to="/" class="back-button"> ← Movies </RouterLink>
       </header>
 
       <div class="page-heading">
@@ -48,9 +46,7 @@ const past = computed(() =>
         <span aria-hidden="true">🎟</span>
         <h2>No tickets yet</h2>
         <p>Choose a movie and session to get your first ticket.</p>
-        <RouterLink to="/" class="primary-button">
-          Browse movies
-        </RouterLink>
+        <RouterLink to="/" class="primary-button"> Browse movies </RouterLink>
       </section>
 
       <template v-else>
@@ -60,9 +56,7 @@ const past = computed(() =>
             <span>{{ upcoming.length }} orders</span>
           </div>
 
-          <p v-if="upcoming.length === 0" class="none">
-            No upcoming tickets.
-          </p>
+          <p v-if="upcoming.length === 0" class="none">No upcoming tickets.</p>
 
           <div v-else class="orders-grid">
             <article
@@ -95,9 +89,7 @@ const past = computed(() =>
             <span>{{ past.length }} orders</span>
           </div>
 
-          <p v-if="past.length === 0" class="none">
-            No past tickets.
-          </p>
+          <p v-if="past.length === 0" class="none">No past tickets.</p>
 
           <div v-else class="orders-grid">
             <article
@@ -132,11 +124,8 @@ const past = computed(() =>
 .my-tickets-page {
   min-height: 100vh;
   padding: 28px 24px 40px;
-  background: radial-gradient(
-    ellipse at 80% 0%,
-    #39275540,
-    transparent 55%
-  ), #0d0d0f;
+  background:
+    radial-gradient(ellipse at 80% 0%, #39275540, transparent 55%), #0d0d0f;
   color: #f2f2f3;
 }
 

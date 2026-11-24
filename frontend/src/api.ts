@@ -40,7 +40,17 @@ async function get<T>(path: string): Promise<T> {
 }
 
 export const getMovies = () => get<CatalogMovie[]>('/movies')
-export const getMovie = (id: string) => get<Movie>('/movies/' + encodeURIComponent(id))
-export const getSessions = (movieId: number) => get<Session[]>('/movies/' + movieId + '/sessions')
-export const getSession = (movieId: number | string, sessionId: number | string) =>
-  get<Session>('/movies/' + encodeURIComponent(movieId) + '/sessions/' + encodeURIComponent(sessionId))
+export const getMovie = (id: string) =>
+  get<Movie>('/movies/' + encodeURIComponent(id))
+export const getSessions = (movieId: number) =>
+  get<Session[]>('/movies/' + movieId + '/sessions')
+export const getSession = (
+  movieId: number | string,
+  sessionId: number | string,
+) =>
+  get<Session>(
+    '/movies/' +
+      encodeURIComponent(movieId) +
+      '/sessions/' +
+      encodeURIComponent(sessionId),
+  )

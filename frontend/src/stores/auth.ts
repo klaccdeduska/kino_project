@@ -11,7 +11,6 @@ export interface UserProfile {
 export const currentUser = ref<UserProfile | null>(null)
 export const authLoading = ref(false)
 
-
 export async function loadCurrentUser() {
   authLoading.value = true
 

@@ -74,17 +74,14 @@ function getGroupCount(row: HallRow) {
 
 function getSeatGroup(row: HallRow, seat: number): string[] {
   if (row.category === 'double') {
-    return [
-      `${row.id}-${seat * 2 - 1}`,
-      `${row.id}-${seat * 2}`,
-    ]
+    return [`${row.id}-${seat * 2 - 1}`, `${row.id}-${seat * 2}`]
   }
 
   return [`${row.id}-${seat}`]
 }
 
 function isGroupOccupied(seatIds: string[]) {
-  return seatIds.some(id => props.occupiedSeats.includes(id))
+  return seatIds.some((id) => props.occupiedSeats.includes(id))
 }
 
 function normalizeInitialSeats(): string[] {
@@ -95,9 +92,7 @@ function normalizeInitialSeats(): string[] {
     for (let seat = 1; seat <= getGroupCount(row); seat++) {
       const group = getSeatGroup(row, seat)
 
-      const wasSelected = group.some(
-        id => initialSeats.includes(id),
-      )
+      const wasSelected = group.some((id) => initialSeats.includes(id))
 
       if (wasSelected && !isGroupOccupied(group)) {
         result.push(...group)
@@ -115,7 +110,7 @@ const totalCents = computed(() => {
 })
 
 function isGroupSelected(seatIds: string[]) {
-  return seatIds.every(id => selectedSeats.value.includes(id))
+  return seatIds.every((id) => selectedSeats.value.includes(id))
 }
 
 const selectedGroups = computed(() => {
@@ -144,7 +139,7 @@ function toggleGroup(seatIds: string[]) {
 
   if (isGroupSelected(seatIds)) {
     selectedSeats.value = selectedSeats.value.filter(
-      id => !seatIds.includes(id),
+      (id) => !seatIds.includes(id),
     )
   } else {
     for (const id of seatIds) {
@@ -214,9 +209,7 @@ function clearSelection() {
                 :class="[
                   `seat--${row.category}`,
                   {
-                    'seat--selected': isGroupSelected(
-                      getSeatGroup(row, seat),
-                    ),
+                    'seat--selected': isGroupSelected(getSeatGroup(row, seat)),
                   },
                 ]"
                 :disabled="isGroupOccupied(getSeatGroup(row, seat))"
@@ -231,9 +224,7 @@ function clearSelection() {
                   </span>
 
                   <span class="seat-status">
-                    <template
-                      v-if="isGroupOccupied(getSeatGroup(row, seat))"
-                    >
+                    <template v-if="isGroupOccupied(getSeatGroup(row, seat))">
                       ×
                     </template>
 
@@ -243,9 +234,7 @@ function clearSelection() {
                       ✓
                     </template>
 
-                    <template v-else-if="row.category === 'vip'">
-                      ★
-                    </template>
+                    <template v-else-if="row.category === 'vip'"> ★ </template>
                   </span>
                 </span>
 
@@ -295,25 +284,27 @@ function clearSelection() {
 
     <div class="seat-legend" aria-label="Seat status">
       <span class="legend-item">
-        <span
-          class="legend-dot legend-dot--selected"
-          aria-hidden="true"
-        >✓</span>
+        <span class="legend-dot legend-dot--selected" aria-hidden="true"
+          >✓</span
+        >
         Selected
       </span>
 
       <span class="legend-item">
-        <span
-          class="legend-dot legend-dot--occupied"
-          aria-hidden="true"
-        >×</span>
+        <span class="legend-dot legend-dot--occupied" aria-hidden="true"
+          >×</span
+        >
         Occupied
       </span>
     </div>
 
     <hr />
 
-    <section class="selection-summary" aria-label="Selected seats" aria-live="polite">
+    <section
+      class="selection-summary"
+      aria-label="Selected seats"
+      aria-live="polite"
+    >
       <h2>Your selection</h2>
 
       <ul v-if="selectedGroups.length">
@@ -354,24 +345,109 @@ function clearSelection() {
 </template>
 
 <style scoped>
-.seat-picker { padding: 28px; background: #17161c; border: 1px solid #34303e; border-radius: 20px; box-shadow: 0 20px 70px #0003; }
-.seat-picker > h2 { margin: 0 0 8px; font-size: 22px; }
-.hall-hint { margin: 0 0 20px; color: #aaa6b4; font-size: 13px; line-height: 1.6; }
-.hall-scroll { background: radial-gradient(ellipse at 50% 100%, #b6a0ff10, transparent 70%), #111015; border: 1px solid #ffffff08; border-radius: 16px; }
-.selection-summary { padding: 22px; margin-bottom: 20px; border: 1px solid #4b3d62; border-radius: 14px; background: #c4b5fd09; }
-.selection-summary h2 { margin: 0 0 16px; font-size: 18px; }
-.selection-summary p { color: #beb8cb; font-size: 14px; }
-.selection-summary strong { color: #e0d2ff; font-size: 22px; }
-.selection-summary ul { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; list-style: none; }
-.selection-summary li { padding: 10px 12px; color: #e5dcff; background: #b6a0ff15; border: 1px solid #b6a0ff40; border-radius: 9px; font-size: 12px; line-height: 1.6; }
-.selection-actions button { min-height: 48px; padding: 14px 24px; border-radius: 12px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 150ms, transform 150ms; }
-.clear-button { border: 1px solid #57505f; background: transparent; color: #dbd5e5; }
-.clear-button:hover:not(:disabled) { background: #ffffff0a; }
-.checkout-button { flex: 1; border: 1px solid #c4b5fd; background: #c4b5fd; color: #20152f; box-shadow: 0 5px 22px #b6a0ff20; }
-.checkout-button:hover:not(:disabled) { background: #d8cdff; transform: translateY(-1px); }
-.selection-actions button:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
-.selection-actions button:focus-visible { outline: 3px solid #dfd4ff; outline-offset: 4px; }
-.seat-picker hr { margin: 24px 0; border: 0; border-top: 1px solid #39323f; }
+.seat-picker {
+  padding: 28px;
+  background: #17161c;
+  border: 1px solid #34303e;
+  border-radius: 20px;
+  box-shadow: 0 20px 70px #0003;
+}
+.seat-picker > h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+.hall-hint {
+  margin: 0 0 20px;
+  color: #aaa6b4;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.hall-scroll {
+  background:
+    radial-gradient(ellipse at 50% 100%, #b6a0ff10, transparent 70%), #111015;
+  border: 1px solid #ffffff08;
+  border-radius: 16px;
+}
+.selection-summary {
+  padding: 22px;
+  margin-bottom: 20px;
+  border: 1px solid #4b3d62;
+  border-radius: 14px;
+  background: #c4b5fd09;
+}
+.selection-summary h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+}
+.selection-summary p {
+  color: #beb8cb;
+  font-size: 14px;
+}
+.selection-summary strong {
+  color: #e0d2ff;
+  font-size: 22px;
+}
+.selection-summary ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+.selection-summary li {
+  padding: 10px 12px;
+  color: #e5dcff;
+  background: #b6a0ff15;
+  border: 1px solid #b6a0ff40;
+  border-radius: 9px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.selection-actions button {
+  min-height: 48px;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 150ms,
+    transform 150ms;
+}
+.clear-button {
+  border: 1px solid #57505f;
+  background: transparent;
+  color: #dbd5e5;
+}
+.clear-button:hover:not(:disabled) {
+  background: #ffffff0a;
+}
+.checkout-button {
+  flex: 1;
+  border: 1px solid #c4b5fd;
+  background: #c4b5fd;
+  color: #20152f;
+  box-shadow: 0 5px 22px #b6a0ff20;
+}
+.checkout-button:hover:not(:disabled) {
+  background: #d8cdff;
+  transform: translateY(-1px);
+}
+.selection-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.selection-actions button:focus-visible {
+  outline: 3px solid #dfd4ff;
+  outline-offset: 4px;
+}
+.seat-picker hr {
+  margin: 24px 0;
+  border: 0;
+  border-top: 1px solid #39323f;
+}
 .hall-scroll {
   overflow-x: auto;
   padding: 20px 8px;
@@ -666,8 +742,12 @@ function clearSelection() {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .selection-actions button { transition: none; }
-  .checkout-button:hover:not(:disabled) { transform: none; }
+  .selection-actions button {
+    transition: none;
+  }
+  .checkout-button:hover:not(:disabled) {
+    transform: none;
+  }
   .seat {
     transition: none;
   }
@@ -677,10 +757,20 @@ function clearSelection() {
   }
 }
 @media (max-width: 600px) {
-  .seat-picker { padding: 18px 12px; }
-  .seat-categories { grid-template-columns: 1fr; }
-  .category-card { padding: 14px; }
-  .selection-summary { padding: 16px; }
-  .selection-actions { flex-direction: column-reverse; }
+  .seat-picker {
+    padding: 18px 12px;
+  }
+  .seat-categories {
+    grid-template-columns: 1fr;
+  }
+  .category-card {
+    padding: 14px;
+  }
+  .selection-summary {
+    padding: 16px;
+  }
+  .selection-actions {
+    flex-direction: column-reverse;
+  }
 }
 </style>

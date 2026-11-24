@@ -21,7 +21,11 @@ describe('Credentials HTTP validation', () => {
   beforeAll(async () => {
     const module = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [AuthService, JwtService, { provide: DatabaseService, useValue: { pool: { execute } } }],
+      providers: [
+        AuthService,
+        JwtService,
+        { provide: DatabaseService, useValue: { pool: { execute } } },
+      ],
     }).compile();
     app = module.createNestApplication<INestApplication<Server>>();
     await app.init();

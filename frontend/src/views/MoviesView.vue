@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { getMovies, getSessions, type CatalogMovie as Movie, type Session } from '../api'
+import {
+  getMovies,
+  getSessions,
+  type CatalogMovie as Movie,
+  type Session,
+} from '../api'
 import movieBackdrops from '../data/movieBackdrops.json'
 import {
   formatSessionDate,
@@ -16,7 +21,8 @@ onMounted(() => {
   void loadCurrentUser()
 })
 
-const backdrops: Record<string, { src: string; position: string }> = movieBackdrops
+const backdrops: Record<string, { src: string; position: string }> =
+  movieBackdrops
 
 function getMovieBackdrop(movie: Movie) {
   return backdrops[movie.title]?.src ?? movie.poster
@@ -30,9 +36,7 @@ const movies = ref<Movie[]>([])
 const topMovieIds = [2, 1, 3, 4, 9, 12]
 
 const topMovies = computed(() => {
-  const moviesById = new Map(
-    movies.value.map((movie) => [movie.id, movie]),
-  )
+  const moviesById = new Map(movies.value.map((movie) => [movie.id, movie]))
 
   return topMovieIds
     .map((id) => moviesById.get(id))
@@ -41,15 +45,13 @@ const topMovies = computed(() => {
 const search = ref('')
 const selectedGenres = ref<string[]>([])
 const catalogMode = ref<'all' | 'now'>('all')
-const nowShowingCount = computed(() =>
-  movies.value.filter((movie) => movie.hasUpcomingSessions).length,
+const nowShowingCount = computed(
+  () => movies.value.filter((movie) => movie.hasUpcomingSessions).length,
 )
 
 function toggleGenre(genre: string) {
   if (selectedGenres.value.includes(genre)) {
-    selectedGenres.value = selectedGenres.value.filter(
-      (item) => item !== genre,
-    )
+    selectedGenres.value = selectedGenres.value.filter((item) => item !== genre)
   } else {
     selectedGenres.value.push(genre)
   }
@@ -128,9 +130,7 @@ function selectWeek(week: string) {
 }
 
 const sessionsMovie = computed(() => {
-  return movies.value.find(
-    (movie) => movie.id === sessionsMovieId.value
-  )
+  return movies.value.find((movie) => movie.id === sessionsMovieId.value)
 })
 function getGenres(genre: string) {
   return genre
@@ -140,9 +140,7 @@ function getGenres(genre: string) {
 }
 
 const genres = computed(() => {
-  const allGenres = movies.value.flatMap((movie) =>
-    getGenres(movie.genre),
-  )
+  const allGenres = movies.value.flatMap((movie) => getGenres(movie.genre))
 
   return [...new Set(allGenres)].sort()
 })
@@ -162,7 +160,8 @@ const filteredMovies = computed(() => {
         selectedGenres.value.includes(genre),
       )
 
-    const matchesSchedule = catalogMode.value === 'all' || movie.hasUpcomingSessions
+    const matchesSchedule =
+      catalogMode.value === 'all' || movie.hasUpcomingSessions
     return matchesSearch && matchesCategory && matchesSchedule
   })
 })
@@ -178,14 +177,18 @@ const moviePages = computed(() => {
 })
 
 const availableWeeks = computed(() => {
-  const weeks = sessions.value.map((session) => getSessionWeekStart(session.date))
+  const weeks = sessions.value.map((session) =>
+    getSessionWeekStart(session.date),
+  )
 
   return [...new Set([currentWeek.value, ...weeks])].sort()
 })
 
 const filteredSessions = computed(() => {
   if (selectedDate.value) {
-    return sessions.value.filter((session) => session.date === selectedDate.value)
+    return sessions.value.filter(
+      (session) => session.date === selectedDate.value,
+    )
   }
 
   if (selectedWeek.value === '') {
@@ -206,10 +209,7 @@ function scrollMovies(direction: number) {
 
   const currentPage = Math.round(track.scrollLeft / pageWidth)
   const lastPage = moviePages.value.length - 1
-  const nextPage = Math.max(
-    0,
-    Math.min(currentPage + direction, lastPage),
-  )
+  const nextPage = Math.max(0, Math.min(currentPage + direction, lastPage))
 
   track.scrollTo({
     left: nextPage * pageWidth,
@@ -253,7 +253,11 @@ async function toggleSessions(movieId: number) {
     if (sessionsMovieId.value === movieId) {
       sessions.value = data
       const firstSession = data[0]
-      if (firstSession && !selectedDate.value && selectedWeek.value === currentWeek.value) {
+      if (
+        firstSession &&
+        !selectedDate.value &&
+        selectedWeek.value === currentWeek.value
+      ) {
         selectWeek(getSessionWeekStart(firstSession.date))
       }
     }
@@ -283,18 +287,26 @@ async function showFeaturedSessions(movieId: number) {
   const index = filteredMovies.value.findIndex((movie) => movie.id === movieId)
   if (!track || index < 0) return
 
-  track.scrollTo({ left: Math.floor(index / 4) * track.clientWidth, behavior: 'instant' })
+  track.scrollTo({
+    left: Math.floor(index / 4) * track.clientWidth,
+    behavior: 'instant',
+  })
   const card = track.querySelector<HTMLElement>(`#movie-card-${movieId}`)
   card?.focus({ preventScroll: true })
-  card?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' })
+  card?.scrollIntoView({
+    block: 'center',
+    inline: 'nearest',
+    behavior: 'instant',
+  })
 }
-
 </script>
 
 <template>
   <header id="top" class="site-header">
     <nav class="site-navigation" aria-label="Main navigation">
-      <h1 class="site-brand"><a href="#top">BUBLIKI<span>CINEMA</span></a></h1>
+      <h1 class="site-brand">
+        <a href="#top">BUBLIKI<span>CINEMA</span></a>
+      </h1>
       <a class="catalog-link" href="#movies">Movies</a>
       <div v-if="currentUser" class="account-links">
         <RouterLink class="sign-in" to="/my-tickets">My tickets</RouterLink>
@@ -309,26 +321,50 @@ async function showFeaturedSessions(movieId: number) {
     </nav>
   </header>
   <main>
-    <section v-if="featuredMovie" class="featured-movie" aria-label="Featured movies" aria-roledescription="carousel"
-      :style="{ '--slide-direction': featuredDirection }">
-      <Transition name="featured-motion" @after-enter="featuredMoving = false"
-        @enter-cancelled="featuredMoving = false">
-        <div :key="featuredMovie.id" class="featured-slide" role="group" aria-roledescription="slide"
-          :aria-label="`${featuredIndex + 1} of ${featuredMovies.length}`">
-          <img v-if="getMovieBackdrop(featuredMovie)" class="featured-background"
+    <section
+      v-if="featuredMovie"
+      class="featured-movie"
+      aria-label="Featured movies"
+      aria-roledescription="carousel"
+      :style="{ '--slide-direction': featuredDirection }"
+    >
+      <Transition
+        name="featured-motion"
+        @after-enter="featuredMoving = false"
+        @enter-cancelled="featuredMoving = false"
+      >
+        <div
+          :key="featuredMovie.id"
+          class="featured-slide"
+          role="group"
+          aria-roledescription="slide"
+          :aria-label="`${featuredIndex + 1} of ${featuredMovies.length}`"
+        >
+          <img
+            v-if="getMovieBackdrop(featuredMovie)"
+            class="featured-background"
             :src="getMovieBackdrop(featuredMovie) ?? undefined"
-            :style="{ objectPosition: getMovieBackdropPosition(featuredMovie) }" alt="" fetchpriority="high" />
+            :style="{ objectPosition: getMovieBackdropPosition(featuredMovie) }"
+            alt=""
+            fetchpriority="high"
+          />
           <div class="featured-copy">
             <span class="featured-label">Featured movie</span>
             <h2 id="featured-title">{{ featuredMovie.title }}</h2>
-            <p class="featured-meta">{{ featuredMovie.genre }} · {{ featuredMovie.duration }} min</p>
+            <p class="featured-meta">
+              {{ featuredMovie.genre }} · {{ featuredMovie.duration }} min
+            </p>
             <div class="featured-badges">
               <span>{{ featuredMovie.ageRating }}</span>
               <span>{{ featuredMovie.releaseYear }}</span>
             </div>
             <p class="featured-description">{{ featuredMovie.description }}</p>
           </div>
-          <button type="button" class="featured-action" @click="showFeaturedSessions(featuredMovie.id)">
+          <button
+            type="button"
+            class="featured-action"
+            @click="showFeaturedSessions(featuredMovie.id)"
+          >
             Show sessions
             <span aria-hidden="true">→</span>
           </button>
@@ -336,56 +372,130 @@ async function showFeaturedSessions(movieId: number) {
       </Transition>
 
       <template v-if="featuredMovies.length > 1">
-        <button type="button" class="featured-arrow featured-arrow--previous" aria-label="Previous featured movie"
-          @click="changeFeatured(-1)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+        <button
+          type="button"
+          class="featured-arrow featured-arrow--previous"
+          aria-label="Previous featured movie"
+          @click="changeFeatured(-1)"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            aria-hidden="true"
+          >
             <path d="m15 6-6 6 6 6" />
           </svg>
         </button>
-        <button type="button" class="featured-arrow featured-arrow--next" aria-label="Next featured movie"
-          @click="changeFeatured(1)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+        <button
+          type="button"
+          class="featured-arrow featured-arrow--next"
+          aria-label="Next featured movie"
+          @click="changeFeatured(1)"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            aria-hidden="true"
+          >
             <path d="m9 6 6 6-6 6" />
           </svg>
         </button>
-        <div class="featured-dots" role="group" aria-label="Choose featured movie">
-          <button v-for="(movie, index) in featuredMovies" :key="movie.id" type="button" class="featured-dot"
-            :aria-label="`Show ${movie.title}`" :aria-pressed="featuredIndex === index" @click="goToFeatured(index)">
+        <div
+          class="featured-dots"
+          role="group"
+          aria-label="Choose featured movie"
+        >
+          <button
+            v-for="(movie, index) in featuredMovies"
+            :key="movie.id"
+            type="button"
+            class="featured-dot"
+            :aria-label="`Show ${movie.title}`"
+            :aria-pressed="featuredIndex === index"
+            @click="goToFeatured(index)"
+          >
             <span></span>
           </button>
         </div>
       </template>
-      <p class="featured-status" role="status">{{ featuredIndex + 1 }} / {{ featuredMovies.length }} — {{
-        featuredMovie.title
-      }}</p>
+      <p class="featured-status" role="status">
+        {{ featuredIndex + 1 }} / {{ featuredMovies.length }} —
+        {{ featuredMovie.title }}
+      </p>
     </section>
-    <section v-if="topMovies.length > 0" class="top-movies" aria-labelledby="top-movies-title">
+    <section
+      v-if="topMovies.length > 0"
+      class="top-movies"
+      aria-labelledby="top-movies-title"
+    >
       <div class="top-movies-heading">
         <h2 id="top-movies-title">Top movies</h2>
         <span>Our picks</span>
-        <div class="top-movies-controls" role="group" aria-label="Browse top movies">
-          <button type="button" aria-label="Previous top movie" aria-controls="top-movies-track"
-            @click="scrollTopMovies(-1)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <div
+          class="top-movies-controls"
+          role="group"
+          aria-label="Browse top movies"
+        >
+          <button
+            type="button"
+            aria-label="Previous top movie"
+            aria-controls="top-movies-track"
+            @click="scrollTopMovies(-1)"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
               <path d="m15 6-6 6 6 6" />
             </svg>
           </button>
-          <button type="button" aria-label="Next top movie" aria-controls="top-movies-track"
-            @click="scrollTopMovies(1)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <button
+            type="button"
+            aria-label="Next top movie"
+            aria-controls="top-movies-track"
+            @click="scrollTopMovies(1)"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
               <path d="m9 6 6 6-6 6" />
             </svg>
           </button>
         </div>
       </div>
 
-      <div id="top-movies-track" ref="topMoviesTrack" class="top-movies-track" tabindex="0" role="region"
-        aria-label="Top movies">
-        <article v-for="movie in topMovies" :key="movie.id" class="top-movie-card">
+      <div
+        id="top-movies-track"
+        ref="topMoviesTrack"
+        class="top-movies-track"
+        tabindex="0"
+        role="region"
+        aria-label="Top movies"
+      >
+        <article
+          v-for="movie in topMovies"
+          :key="movie.id"
+          class="top-movie-card"
+        >
           <div class="top-movie-image">
-            <img v-if="getMovieBackdrop(movie)" :src="getMovieBackdrop(movie) ?? undefined"
-              :style="{ objectPosition: getMovieBackdropPosition(movie) }" :alt="movie.title + ' scene'"
-              loading="lazy" />
+            <img
+              v-if="getMovieBackdrop(movie)"
+              :src="getMovieBackdrop(movie) ?? undefined"
+              :style="{ objectPosition: getMovieBackdropPosition(movie) }"
+              :alt="movie.title + ' scene'"
+              loading="lazy"
+            />
             <span v-else class="top-movie-placeholder">No poster</span>
 
             <span class="top-movie-rating">
@@ -395,7 +505,11 @@ async function showFeaturedSessions(movieId: number) {
 
           <div class="top-movie-info">
             <h3>
-              <button type="button" class="top-movie-title" @click="showFeaturedSessions(movie.id)">
+              <button
+                type="button"
+                class="top-movie-title"
+                @click="showFeaturedSessions(movie.id)"
+              >
                 {{ movie.title }}
               </button>
             </h3>
@@ -412,10 +526,18 @@ async function showFeaturedSessions(movieId: number) {
         <h2 id="movies" tabindex="-1">Explore the cinema</h2>
       </div>
       <div class="catalog-switch" role="group" aria-label="Movie availability">
-        <button type="button" :aria-pressed="catalogMode === 'all'" @click="catalogMode = 'all'">
+        <button
+          type="button"
+          :aria-pressed="catalogMode === 'all'"
+          @click="catalogMode = 'all'"
+        >
           All movies <span>{{ movies.length }}</span>
         </button>
-        <button type="button" :aria-pressed="catalogMode === 'now'" @click="catalogMode = 'now'">
+        <button
+          type="button"
+          :aria-pressed="catalogMode === 'now'"
+          @click="catalogMode = 'now'"
+        >
           <i class="now-dot" aria-hidden="true"></i>
           Now showing <span>{{ nowShowingCount }}</span>
         </button>
@@ -424,16 +546,36 @@ async function showFeaturedSessions(movieId: number) {
 
     <div class="movie-search">
       <label for="movie-search">Search movies:</label>
-      <input id="movie-search" v-model="search" type="search" placeholder="Movie title or genre" />
+      <input
+        id="movie-search"
+        v-model="search"
+        type="search"
+        placeholder="Movie title or genre"
+      />
     </div>
-    <div v-if="!loading && !error" class="genre-filters" role="group" aria-label="Filter by genres">
-      <button type="button" class="genre-button" :aria-pressed="selectedGenres.length === 0"
-        @click="selectedGenres = []">
+    <div
+      v-if="!loading && !error"
+      class="genre-filters"
+      role="group"
+      aria-label="Filter by genres"
+    >
+      <button
+        type="button"
+        class="genre-button"
+        :aria-pressed="selectedGenres.length === 0"
+        @click="selectedGenres = []"
+      >
         All genres
       </button>
 
-      <button v-for="genre in genres" :key="genre" type="button" class="genre-button"
-        :aria-pressed="selectedGenres.includes(genre)" @click="toggleGenre(genre)">
+      <button
+        v-for="genre in genres"
+        :key="genre"
+        type="button"
+        class="genre-button"
+        :aria-pressed="selectedGenres.includes(genre)"
+        @click="toggleGenre(genre)"
+      >
         {{ genre }}
       </button>
     </div>
@@ -444,31 +586,70 @@ async function showFeaturedSessions(movieId: number) {
       {{ error }}
     </p>
 
-    <p v-else-if="filteredMovies.length === 0" class="catalog-empty" role="status">
-      {{ catalogMode === 'now'
-        ? 'No upcoming screenings match your selection. Try other genres, clear the search, or choose All movies.'
-        : 'No movies match your selection. Try other genres or clear the search.' }}
+    <p
+      v-else-if="filteredMovies.length === 0"
+      class="catalog-empty"
+      role="status"
+    >
+      {{
+        catalogMode === 'now'
+          ? 'No upcoming screenings match your selection. Try other genres, clear the search, or choose All movies.'
+          : 'No movies match your selection. Try other genres or clear the search.'
+      }}
     </p>
 
     <div v-else class="movies-carousel">
-      <button class="carousel-arrow" type="button" aria-label="Предыдущие фильмы" aria-controls="movies-track"
-        :disabled="moviePages.length <= 1" @click="scrollMovies(-1)">
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
+      <button
+        class="carousel-arrow"
+        type="button"
+        aria-label="Предыдущие фильмы"
+        aria-controls="movies-track"
+        :disabled="moviePages.length <= 1"
+        @click="scrollMovies(-1)"
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <path d="m15 6-6 6 6 6" />
         </svg>
       </button>
 
-      <div id="movies-track" :key="JSON.stringify([search, selectedGenres, catalogMode])" ref="moviesTrack"
-        class="movies-grid" tabindex="0" role="region" aria-label="Афиша фильмов">
-        <div v-for="(page, pageIndex) in moviePages" :key="pageIndex" class="movies-page">
-          <article v-for="movie in page" :key="movie.id" class="movie-card" :id="`movie-card-${movie.id}`" tabindex="-1"
-            :class="{ 'movie-card--selected': sessionsMovieId === movie.id }">
-            <img v-if="movie.poster" :src="movie.poster" :alt="movie.title + ' poster'" class="movie-poster" />
+      <div
+        id="movies-track"
+        :key="JSON.stringify([search, selectedGenres, catalogMode])"
+        ref="moviesTrack"
+        class="movies-grid"
+        tabindex="0"
+        role="region"
+        aria-label="Афиша фильмов"
+      >
+        <div
+          v-for="(page, pageIndex) in moviePages"
+          :key="pageIndex"
+          class="movies-page"
+        >
+          <article
+            v-for="movie in page"
+            :key="movie.id"
+            class="movie-card"
+            :id="`movie-card-${movie.id}`"
+            tabindex="-1"
+            :class="{ 'movie-card--selected': sessionsMovieId === movie.id }"
+          >
+            <img
+              v-if="movie.poster"
+              :src="movie.poster"
+              :alt="movie.title + ' poster'"
+              class="movie-poster"
+            />
 
-            <div v-else class="movie-poster poster-placeholder">
-              No poster
-            </div>
+            <div v-else class="movie-poster poster-placeholder">No poster</div>
 
             <h2>{{ movie.title }}</h2>
             <p class="movie-director">{{ movie.director }}</p>
@@ -476,38 +657,70 @@ async function showFeaturedSessions(movieId: number) {
             <p>{{ movie.description }}</p>
             <p>{{ movie.releaseYear }} · {{ movie.ageRating }}</p>
 
-            <button class="sessions-toggle" type="button" :aria-expanded="sessionsMovieId === movie.id"
-              @click="toggleSessions(movie.id)">
+            <button
+              class="sessions-toggle"
+              type="button"
+              :aria-expanded="sessionsMovieId === movie.id"
+              @click="toggleSessions(movie.id)"
+            >
               {{
-                sessionsMovieId === movie.id
-                  ? 'Hide sessions'
-                  : 'Show sessions'
+                sessionsMovieId === movie.id ? 'Hide sessions' : 'Show sessions'
               }}
             </button>
-
           </article>
         </div>
       </div>
 
-      <button class="carousel-arrow" type="button" aria-label="Следующие фильмы" aria-controls="movies-track"
-        :disabled="moviePages.length <= 1" @click="scrollMovies(1)">
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
+      <button
+        class="carousel-arrow"
+        type="button"
+        aria-label="Следующие фильмы"
+        aria-controls="movies-track"
+        :disabled="moviePages.length <= 1"
+        @click="scrollMovies(1)"
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <path d="m9 6 6 6-6 6" />
         </svg>
       </button>
     </div>
-    <div v-if="sessionsMovie" ref="sessionsPanel" class="movie-sessions" tabindex="-1">
+    <div
+      v-if="sessionsMovie"
+      ref="sessionsPanel"
+      class="movie-sessions"
+      tabindex="-1"
+    >
       <h3>Sessions: {{ sessionsMovie.title }}</h3>
 
       <div class="session-dates" role="group" aria-label="Session weeks">
-        <button type="button" :class="{ 'date-button--selected': !selectedDate && selectedWeek === '' }"
-          :aria-pressed="!selectedDate && selectedWeek === ''" @click="selectWeek('')">
+        <button
+          type="button"
+          :class="{
+            'date-button--selected': !selectedDate && selectedWeek === '',
+          }"
+          :aria-pressed="!selectedDate && selectedWeek === ''"
+          @click="selectWeek('')"
+        >
           All weeks
         </button>
-        <button v-for="week in availableWeeks" :key="week" type="button" :class="{
-          'date-button--selected': !selectedDate && selectedWeek === week,
-        }" :aria-pressed="!selectedDate && selectedWeek === week" @click="selectWeek(week)">
+        <button
+          v-for="week in availableWeeks"
+          :key="week"
+          type="button"
+          :class="{
+            'date-button--selected': !selectedDate && selectedWeek === week,
+          }"
+          :aria-pressed="!selectedDate && selectedWeek === week"
+          @click="selectWeek(week)"
+        >
           {{ formatSessionWeek(week) }}
         </button>
       </div>
@@ -517,9 +730,7 @@ async function showFeaturedSessions(movieId: number) {
         <input v-model="selectedDate" type="date" />
       </label>
 
-      <p v-if="sessionsLoading" role="status">
-        Loading sessions...
-      </p>
+      <p v-if="sessionsLoading" role="status">Loading sessions...</p>
 
       <p v-else-if="sessionsError" role="alert">
         {{ sessionsError }}
@@ -536,12 +747,17 @@ async function showFeaturedSessions(movieId: number) {
       </p>
 
       <template v-else>
-        <div v-for="session in filteredSessions" :key="session.id" class="session-item">
+        <div
+          v-for="session in filteredSessions"
+          :key="session.id"
+          class="session-item"
+        >
           <div class="session-time">
             <strong>{{ session.time }}</strong>
 
             <span>
-              Until {{ getSessionEndTime(session.time, sessionsMovie.duration) }}
+              Until
+              {{ getSessionEndTime(session.time, sessionsMovie.duration) }}
               <small v-if="endsNextDay(session.time, sessionsMovie.duration)">
                 (next day)
               </small>
@@ -555,15 +771,17 @@ async function showFeaturedSessions(movieId: number) {
             <span>Subtitles: {{ session.subtitles ?? 'Not specified' }}</span>
           </div>
 
-          <RouterLink class="session-book" :to="{
-            name: 'booking',
-            params: { movieId: sessionsMovie.id },
-            query: { sessionId: session.id },
-          }">
+          <RouterLink
+            class="session-book"
+            :to="{
+              name: 'booking',
+              params: { movieId: sessionsMovie.id },
+              query: { sessionId: session.id },
+            }"
+          >
             Choose seats
           </RouterLink>
         </div>
-
       </template>
     </div>
   </main>
@@ -598,14 +816,14 @@ async function showFeaturedSessions(movieId: number) {
   border-color: #b6a0ff;
 }
 
-.genre-filters .genre-button[aria-pressed="true"] {
+.genre-filters .genre-button[aria-pressed='true'] {
   background: #c4b5fd;
   border-color: #c4b5fd;
   color: #171320;
   box-shadow: 0 0 0 2px #c4b5fd26;
 }
 
-.genre-filters .genre-button[aria-pressed="true"]:hover {
+.genre-filters .genre-button[aria-pressed='true']:hover {
   background: #d4c8ff;
 }
 
@@ -710,15 +928,12 @@ async function showFeaturedSessions(movieId: number) {
 }
 
 .featured-slide::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(90deg,
-      #100d16e6 0%,
-      #100d16a6 45%,
-      #100d1626 100%),
+    linear-gradient(90deg, #100d16e6 0%, #100d16a6 45%, #100d1626 100%),
     linear-gradient(0deg, #100d16e6, transparent 70%);
 }
 
@@ -813,10 +1028,12 @@ async function showFeaturedSessions(movieId: number) {
   }
 
   .featured-slide::before {
-    background: linear-gradient(0deg,
-        #100d16fa 0%,
-        #100d16db 65%,
-        #100d1680 100%);
+    background: linear-gradient(
+      0deg,
+      #100d16fa 0%,
+      #100d16db 65%,
+      #100d1680 100%
+    );
   }
 
   .featured-background {
@@ -888,7 +1105,7 @@ async function showFeaturedSessions(movieId: number) {
   border-radius: 50%;
 }
 
-.featured-dot[aria-pressed="true"] span {
+.featured-dot[aria-pressed='true'] span {
   background: #c4b5fd;
   border-color: #c4b5fd;
 }
@@ -941,7 +1158,6 @@ async function showFeaturedSessions(movieId: number) {
 }
 
 @media (prefers-reduced-motion: reduce) {
-
   .featured-motion-enter-active,
   .featured-motion-leave-active {
     transition: none;
@@ -1015,13 +1231,13 @@ main {
   font-size: 14px;
 }
 
-.catalog-switch button[aria-pressed="true"] {
+.catalog-switch button[aria-pressed='true'] {
   background: #c4b5fd;
   color: #20152f;
   border-color: #c4b5fd;
 }
 
-.catalog-switch button[aria-pressed="true"]:hover {
+.catalog-switch button[aria-pressed='true']:hover {
   background: #ded5ff;
 }
 
@@ -1032,7 +1248,7 @@ main {
   font-size: 12px;
 }
 
-.catalog-switch button[aria-pressed="true"] span {
+.catalog-switch button[aria-pressed='true'] span {
   background: #20152f15;
 }
 
@@ -1043,7 +1259,7 @@ main {
   background: #89e4bd;
 }
 
-.catalog-switch button[aria-pressed="true"] .now-dot {
+.catalog-switch button[aria-pressed='true'] .now-dot {
   background: #226b4a;
 }
 
@@ -1228,7 +1444,7 @@ a:focus-visible,
   font-size: 26px;
 }
 
-.session-time>span {
+.session-time > span {
   color: #a1a1ad;
   font-size: 14px;
 }

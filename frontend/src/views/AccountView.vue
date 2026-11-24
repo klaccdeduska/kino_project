@@ -56,19 +56,23 @@ async function saveProfile() {
     <p v-if="message" role="status">{{ message }}</p>
 
     <form @submit.prevent="saveProfile">
-      <label>Name
-        <input v-model="name" maxlength="100">
+      <label
+        >Name
+        <input v-model="name" maxlength="100" />
       </label>
 
-      <label>Email
-        <input :value="email" type="email" disabled>
+      <label
+        >Email
+        <input :value="email" type="email" disabled />
       </label>
 
-      <label>Date of birth
-        <input v-model="dateOfBirth" type="date">
+      <label
+        >Date of birth
+        <input v-model="dateOfBirth" type="date" />
       </label>
 
-      <label>Language
+      <label
+        >Language
         <select v-model="language">
           <option value="et">Eesti</option>
           <option value="ru">Русский</option>

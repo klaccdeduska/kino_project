@@ -13,7 +13,13 @@ describe('Movie catalogue (e2e)', () => {
       imports: [MoviesModule],
     })
       .overrideProvider(DatabaseService)
-      .useValue({ pool: { query: jest.fn().mockResolvedValue([[{ id: 1, hasUpcomingSessions: 1 }]]) } })
+      .useValue({
+        pool: {
+          query: jest
+            .fn()
+            .mockResolvedValue([[{ id: 1, hasUpcomingSessions: 1 }]]),
+        },
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();
