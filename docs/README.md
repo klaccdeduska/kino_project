@@ -1,6 +1,6 @@
 # BUBLIKI project guide
 
-[English](#english) · [Eesti](#eesti) · [Русский](#russian)
+[English](#english) · [Eesti](#eesti) · [Русский](#russian) · [Git workflow](../CONTRIBUTING.md)
 
 ---
 
