@@ -1,0 +1,23 @@
+services:
+  db:
+    image: mariadb:11
+    environment:
+      MARIADB_RANDOM_ROOT_PASSWORD: '1'
+      MARIADB_DATABASE: kino_artillery
+      MARIADB_USER: artillery
+      MARIADB_PASSWORD: artillery_local
+    ports:
+      - '127.0.0.1:3315:3306'
+    healthcheck:
+      test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
+      interval: 2s
+      retries: 30
+    volumes:
+      - ../../backend/prisma/migrations/0_init/migration.sql:/docker-entrypoint-initdb.d/00-movies.sql:ro
+      - ../../backend/prisma/migrations/2_add_cinema_schema/migration.sql:/docker-entrypoint-initdb.d/02-cinema.sql:ro
+      - ../../backend/prisma/migrations/3_normalize_cinema_constraints/migration.sql:/docker-entrypoint-initdb.d/03-constraints.sql:ro
+      - ./artillery-fixtures.sql:/docker-entrypoint-initdb.d/04-fixtures.sql:ro
+      - booking_data:/var/lib/mysql
+
+volumes:
+  booking_data:
