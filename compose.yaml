@@ -5,6 +5,15 @@ services:
       - '6380:6379'
     restart: unless-stopped
 
+  k6:
+    image: grafana/k6:latest
+    profiles:
+      - testing
+    volumes:
+      - ./tests/load:/scripts:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      
   db:
     image: mariadb:11
     environment:
@@ -23,3 +32,5 @@ services:
       - kino_movies_data:/var/lib/mysql
 volumes:
   kino_movies_data:
+
+  
