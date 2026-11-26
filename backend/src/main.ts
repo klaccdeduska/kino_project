@@ -6,7 +6,9 @@ import { BookingLoadModule } from './booking-load/booking-load.module';
 
 async function bootstrap() {
   const bookingLoad = process.env.KINO_BOOKING_LOAD === '1';
-  const app = await NestFactory.create(bookingLoad ? BookingLoadModule : AppModule);
+  const app = await NestFactory.create(
+    bookingLoad ? BookingLoadModule : AppModule,
+  );
 
   app.use(cookieParser());
   app.enableShutdownHooks();

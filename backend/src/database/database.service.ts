@@ -9,7 +9,9 @@ export class DatabaseService implements OnModuleDestroy {
     port: this.bookingLoad ? 3315 : Number(process.env.DB_PORT ?? '3308'),
     user: this.bookingLoad ? 'artillery' : (process.env.DB_USER ?? 'kino_user'),
     password: this.bookingLoad ? 'artillery_local' : process.env.DB_PASSWORD,
-    database: this.bookingLoad ? 'kino_artillery' : (process.env.DB_NAME ?? 'kino'),
+    database: this.bookingLoad
+      ? 'kino_artillery'
+      : (process.env.DB_NAME ?? 'kino'),
     waitForConnections: true,
     connectionLimit: 10,
   });

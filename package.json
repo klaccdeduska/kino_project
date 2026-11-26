@@ -7,6 +7,7 @@
     "update": "node scripts/project.mjs update",
     "stop": "node scripts/project.mjs stop",
     "db:status": "node scripts/project.mjs status",
-    "db:refresh-sessions": "node scripts/project.mjs refresh-sessions"
+    "db:refresh-sessions": "node scripts/project.mjs refresh-sessions",
+    "test:booking-load": "node tests/load/artillery-booking.mjs"
   }
 }

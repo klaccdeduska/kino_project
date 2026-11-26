@@ -1,0 +1,16 @@
+config:
+  target: http://127.0.0.1:3105
+  processor: ./artillery-booking-hooks.js
+  phases:
+    - duration: 1
+      arrivalCount: 20
+  http:
+    timeout: 10
+scenarios:
+  - name: Book seat A-1 at the same time as the other users
+    flow:
+      - function: waitForAllUsers
+      - post:
+          url: /api/load-test/sessions/1/bookings
+          json:
+            seat: A-1
