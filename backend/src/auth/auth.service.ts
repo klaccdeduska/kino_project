@@ -9,6 +9,7 @@ import { compare, hash } from 'bcryptjs';
 import type { Request, Response } from 'express';
 import type { RowDataPacket } from 'mysql2';
 import { DatabaseService } from '../database/database.service';
+import { createHash, randomBytes } from 'node:crypto';
 
 interface UserRow extends RowDataPacket {
   id: number;
@@ -143,6 +144,72 @@ export class AuthService {
     );
 
     return this.publicUser(rows[0]);
+  }
+
+  async forgotPassword(email: string) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+      throw new BadRequestException('Email is required');
+    }
+
+    const [users] = await this.database.pool.execute<UserRow[]>(
+      'SELECT id FROM users WHERE email = ?',
+      [normalizedEmail],
+    );
+
+    const user = users[0];
+    if (!user) {
+      return { message: 'If the email exists, a reset link was sent' };
+    }
+
+    const token = randomBytes(32).toString('hex');
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const expires = new Date(Date.now() + 60 * 60 * 1000);
+
+    await this.database.pool.execute(
+      'UPDATE users SET reset_token_hash = ?, reset_token_expires = ? WHERE id = ?',
+      [tokenHash, expires, user.id],
+    );
+
+    return {
+      message: 'If the email exists, a reset link was sent',
+      resetToken: token,
+    };
+  }
+
+  async resetPassword(token: string, password: string) {
+    if (!token) {
+      throw new BadRequestException('Reset token is required');
+    }
+
+    if (password.length < 8 || Buffer.byteLength(password, 'utf8') > 72) {
+      throw new BadRequestException(
+        'Password must have at least 8 characters and at most 72 UTF-8 bytes',
+      );
+    }
+
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const [users] = await this.database.pool.execute<UserRow[]>(
+      `SELECT id FROM users
+       WHERE reset_token_hash = ? AND reset_token_expires > NOW()`,
+      [tokenHash],
+    );
+
+    const user = users[0];
+    if (!user) {
+      throw new BadRequestException('Reset token is invalid or expired');
+    }
+
+    const passwordHash = await hash(password, 10);
+    await this.database.pool.execute(
+      `UPDATE users
+       SET password_hash = ?, reset_token_hash = NULL, reset_token_expires = NULL
+       WHERE id = ?`,
+      [passwordHash, user.id],
+    );
+
+    return { message: 'Password has been reset' };
   }
 
   private async getAuthenticatedUser(request: Request) {

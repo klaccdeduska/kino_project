@@ -7,5 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(100) NULL,
     date_of_birth DATE NULL,
     language VARCHAR(5) NOT NULL DEFAULT 'et',
+    reset_token_hash VARCHAR(64) NULL,
+    reset_token_expires DATETIME NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

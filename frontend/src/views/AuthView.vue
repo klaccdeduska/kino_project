@@ -61,23 +61,11 @@ async function submit() {
 
     <form @submit.prevent="submit">
       <label for="email">Email</label>
-      <input
-        id="email"
-        v-model.trim="email"
-        type="email"
-        autocomplete="email"
-        required
-      />
+      <input id="email" v-model.trim="email" type="email" autocomplete="email" required />
 
       <label for="password">Password</label>
-      <input
-        id="password"
-        v-model="password"
-        type="password"
-        :autocomplete="isRegister ? 'new-password' : 'current-password'"
-        minlength="8"
-        required
-      />
+      <input id="password" v-model="password" type="password"
+        :autocomplete="isRegister ? 'new-password' : 'current-password'" minlength="8" required />
 
       <p v-if="error" role="alert">{{ error }}</p>
 
@@ -90,8 +78,11 @@ async function submit() {
       Already registered?
       <RouterLink to="/login">Sign in</RouterLink>
     </p>
-    <p v-else>
-      No account yet?
+
+    <p v-else class="auth-links">
+      <RouterLink to="/forgot-password">Forgot password?</RouterLink>
+      <span>·</span>
+      <span>No account yet?</span>
       <RouterLink to="/register">Register</RouterLink>
     </p>
   </main>
