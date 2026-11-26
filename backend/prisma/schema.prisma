@@ -48,6 +48,7 @@ model Session {
 
   @@unique([hallId, startsAt], map: "uq_sessions_hall_start")
   @@index([movieId], map: "movie_id")
+  @@index([movieId, startsAt], map: "idx_sessions_movie_start")
   @@map("sessions")
 }
 
