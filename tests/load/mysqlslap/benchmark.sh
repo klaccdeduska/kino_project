@@ -12,6 +12,7 @@ for scenario in without-index with-index; do
     bash "$SCRIPT_DIR/run.sh" \
         --create-schema=kino_benchmark \
         --no-drop \
+        --delimiter=";" \
         --concurrency=1,10,50,100 \
         --iterations=5 \
         --number-of-queries=1000 \
