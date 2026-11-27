@@ -1,20 +1,8 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import {
-  getMovies,
-  getSessions,
-  type CatalogMovie as Movie,
-  type Session,
-} from '../api'
+import { getMovies, type CatalogMovie as Movie } from '../api'
 import movieBackdrops from '../data/movieBackdrops.json'
-import {
-  formatSessionDate,
-  formatSessionWeek,
-  getSessionWeekStart,
-  getSessionEndTime,
-  endsNextDay,
-} from '../utils/session'
 onMounted(() => {
   void loadMovies()
 })
@@ -71,7 +59,6 @@ function scrollTopMovies(direction: number) {
       : 'smooth',
   })
 }
-const sessionsPanel = ref<HTMLElement | null>(null)
 const featuredMovies = ref<Movie[]>([])
 const featuredIndex = ref(0)
 const featuredDirection = ref(1)
@@ -108,28 +95,6 @@ function goToFeatured(index: number) {
   featuredIndex.value = index
 }
 
-const sessionsMovieId = ref<number | null>(null)
-const sessions = ref<Session[]>([])
-const sessionsLoading = ref(false)
-const sessionsError = ref('')
-const cinemaDate = new Intl.DateTimeFormat('sv-SE', {
-  timeZone: 'Europe/Tallinn',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-})
-const currentWeek = ref(getSessionWeekStart(cinemaDate.format()))
-const selectedWeek = ref(currentWeek.value)
-const selectedDate = ref('')
-
-function selectWeek(week: string) {
-  selectedWeek.value = week
-  selectedDate.value = ''
-}
-
-const sessionsMovie = computed(() => {
-  return movies.value.find((movie) => movie.id === sessionsMovieId.value)
-})
 function getGenres(genre: string) {
   return genre
     .split(/[\/,]/)
@@ -174,30 +139,6 @@ const moviePages = computed(() => {
   return pages
 })
 
-const availableWeeks = computed(() => {
-  const weeks = sessions.value.map((session) =>
-    getSessionWeekStart(session.date),
-  )
-
-  return [...new Set([currentWeek.value, ...weeks])].sort()
-})
-
-const filteredSessions = computed(() => {
-  if (selectedDate.value) {
-    return sessions.value.filter(
-      (session) => session.date === selectedDate.value,
-    )
-  }
-
-  if (selectedWeek.value === '') {
-    return sessions.value
-  }
-
-  return sessions.value.filter(
-    (session) => getSessionWeekStart(session.date) === selectedWeek.value,
-  )
-})
-
 function scrollMovies(direction: number) {
   const track = moviesTrack.value
   if (!track || moviePages.value.length === 0) return
@@ -232,71 +173,6 @@ async function loadMovies() {
   }
 }
 
-async function toggleSessions(movieId: number) {
-  if (sessionsMovieId.value === movieId) {
-    sessionsMovieId.value = null
-    return
-  }
-
-  sessionsMovieId.value = movieId
-  currentWeek.value = getSessionWeekStart(cinemaDate.format())
-  selectWeek(currentWeek.value)
-  sessions.value = []
-  sessionsError.value = ''
-  sessionsLoading.value = true
-
-  try {
-    const data = await getSessions(movieId)
-
-    if (sessionsMovieId.value === movieId) {
-      sessions.value = data
-      const firstSession = data[0]
-      if (
-        firstSession &&
-        !selectedDate.value &&
-        selectedWeek.value === currentWeek.value
-      ) {
-        selectWeek(getSessionWeekStart(firstSession.date))
-      }
-    }
-  } catch (err) {
-    if (sessionsMovieId.value === movieId) {
-      sessionsError.value = 'Could not load sessions.'
-    }
-
-    console.error(err)
-  } finally {
-    if (sessionsMovieId.value === movieId) {
-      sessionsLoading.value = false
-    }
-  }
-}
-
-async function showFeaturedSessions(movieId: number) {
-  // Reveal a movie even when the active search/category excludes it.
-  if (!filteredMovies.value.some((movie) => movie.id === movieId)) {
-    catalogMode.value = 'all'
-    search.value = ''
-    selectedGenres.value = []
-  }
-  if (sessionsMovieId.value !== movieId) void toggleSessions(movieId)
-  await nextTick()
-  const track = moviesTrack.value
-  const index = filteredMovies.value.findIndex((movie) => movie.id === movieId)
-  if (!track || index < 0) return
-
-  track.scrollTo({
-    left: Math.floor(index / 4) * track.clientWidth,
-    behavior: 'instant',
-  })
-  const card = track.querySelector<HTMLElement>(`#movie-card-${movieId}`)
-  card?.focus({ preventScroll: true })
-  card?.scrollIntoView({
-    block: 'center',
-    inline: 'nearest',
-    behavior: 'instant',
-  })
-}
 </script>
 
 <template>
@@ -341,14 +217,13 @@ async function showFeaturedSessions(movieId: number) {
             </div>
             <p class="featured-description">{{ featuredMovie.description }}</p>
           </div>
-          <button
-            type="button"
+          <RouterLink
             class="featured-action"
-            @click="showFeaturedSessions(featuredMovie.id)"
+            :to="{ name: 'movie', params: { movieId: featuredMovie.id } }"
           >
-            Show sessions
+            View movie
             <span aria-hidden="true">→</span>
-          </button>
+          </RouterLink>
         </div>
       </Transition>
 
@@ -486,13 +361,12 @@ async function showFeaturedSessions(movieId: number) {
 
           <div class="top-movie-info">
             <h3>
-              <button
-                type="button"
+              <RouterLink
                 class="top-movie-title"
-                @click="showFeaturedSessions(movie.id)"
+                :to="{ name: 'movie', params: { movieId: movie.id } }"
               >
                 {{ movie.title }}
-              </button>
+              </RouterLink>
             </h3>
 
             <p class="top-movie-director">{{ movie.director }}</p>
@@ -619,9 +493,6 @@ async function showFeaturedSessions(movieId: number) {
             v-for="movie in page"
             :key="movie.id"
             class="movie-card"
-            :id="`movie-card-${movie.id}`"
-            tabindex="-1"
-            :class="{ 'movie-card--selected': sessionsMovieId === movie.id }"
           >
             <img
               v-if="movie.poster"
@@ -632,22 +503,19 @@ async function showFeaturedSessions(movieId: number) {
 
             <div v-else class="movie-poster poster-placeholder">No poster</div>
 
-            <h3>{{ movie.title }}</h3>
+            <h3>
+              <RouterLink
+                class="movie-card-link"
+                :to="{ name: 'movie', params: { movieId: movie.id } }"
+              >
+                {{ movie.title }}
+              </RouterLink>
+            </h3>
             <p class="movie-director">{{ movie.director }}</p>
             <p>{{ movie.genre }} · {{ movie.duration }} min</p>
             <p>{{ movie.description }}</p>
             <p>{{ movie.releaseYear }} · {{ movie.ageRating }}</p>
 
-            <button
-              class="sessions-toggle"
-              type="button"
-              :aria-expanded="sessionsMovieId === movie.id"
-              @click="toggleSessions(movie.id)"
-            >
-              {{
-                sessionsMovieId === movie.id ? 'Hide sessions' : 'Show sessions'
-              }}
-            </button>
           </article>
         </div>
       </div>
@@ -672,100 +540,6 @@ async function showFeaturedSessions(movieId: number) {
           <path d="m9 6 6 6-6 6" />
         </svg>
       </button>
-    </div>
-    <div
-      v-if="sessionsMovie"
-      role="region"
-      aria-labelledby="movie-sessions-title"
-      ref="sessionsPanel"
-      class="movie-sessions"
-      tabindex="-1"
-    >
-      <h4 id="movie-sessions-title">Sessions: {{ sessionsMovie.title }}</h4>
-
-      <div class="session-dates" role="group" aria-label="Session weeks">
-        <button
-          type="button"
-          :class="{
-            'date-button--selected': !selectedDate && selectedWeek === '',
-          }"
-          :aria-pressed="!selectedDate && selectedWeek === ''"
-          @click="selectWeek('')"
-        >
-          All weeks
-        </button>
-        <button
-          v-for="week in availableWeeks"
-          :key="week"
-          type="button"
-          :class="{
-            'date-button--selected': !selectedDate && selectedWeek === week,
-          }"
-          :aria-pressed="!selectedDate && selectedWeek === week"
-          @click="selectWeek(week)"
-        >
-          {{ formatSessionWeek(week) }}
-        </button>
-      </div>
-
-      <label class="session-date-filter">
-        Date:
-        <input v-model="selectedDate" type="date" />
-      </label>
-
-      <p v-if="sessionsLoading" role="status">Loading sessions...</p>
-
-      <p v-else-if="sessionsError" role="alert">
-        {{ sessionsError }}
-      </p>
-
-      <p v-else-if="filteredSessions.length === 0">
-        {{
-          selectedDate
-            ? 'No sessions available for this date.'
-            : selectedWeek
-              ? 'No sessions available for this week.'
-              : 'No sessions available.'
-        }}
-      </p>
-
-      <template v-else>
-        <div
-          v-for="session in filteredSessions"
-          :key="session.id"
-          class="session-item"
-        >
-          <div class="session-time">
-            <strong>{{ session.time }}</strong>
-
-            <span>
-              Until
-              {{ getSessionEndTime(session.time, sessionsMovie.duration) }}
-              <small v-if="endsNextDay(session.time, sessionsMovie.duration)">
-                (next day)
-              </small>
-            </span>
-          </div>
-
-          <div class="session-info">
-            <span>{{ formatSessionDate(session.date) }}</span>
-            <span>{{ session.hallName }} · {{ session.format }}</span>
-            <span>Language: {{ session.language }}</span>
-            <span>Subtitles: {{ session.subtitles ?? 'Not specified' }}</span>
-          </div>
-
-          <RouterLink
-            class="session-book"
-            :to="{
-              name: 'booking',
-              params: { movieId: sessionsMovie.id },
-              query: { sessionId: session.id },
-            }"
-          >
-            Choose seats
-          </RouterLink>
-        </div>
-      </template>
     </div>
   </main>
 </template>
@@ -908,6 +682,7 @@ async function showFeaturedSessions(movieId: number) {
 }
 
 .featured-action {
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -922,7 +697,7 @@ async function showFeaturedSessions(movieId: number) {
   cursor: pointer;
 }
 
-.featured-action:hover:not(:disabled) {
+.featured-action:hover {
   background: #ded5ff;
 }
 
@@ -1215,6 +990,7 @@ main {
 }
 
 .movie-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -1294,99 +1070,6 @@ a:focus-visible,
 .movies-grid:focus-visible {
   outline: 2px solid #b6a0ff;
   outline-offset: 3px;
-}
-
-.sessions-toggle {
-  width: 100%;
-  margin-top: auto;
-  padding: 8px 10px;
-  font-size: 14px;
-}
-
-.movie-sessions {
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid #303036;
-}
-
-.movie-sessions h4 {
-  margin: 0 0 12px;
-  font-size: 16px;
-}
-
-.session-dates {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.session-date-filter {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.session-item {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
-  margin-top: 12px;
-  padding: 16px;
-  background: #18181c;
-  border: 1px solid #303036;
-  border-radius: 10px;
-}
-
-.session-time,
-.session-info {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.session-time {
-  min-width: 150px;
-}
-
-.session-time strong {
-  font-size: 26px;
-}
-
-.session-time > span {
-  color: #a1a1ad;
-  font-size: 14px;
-}
-
-.session-info {
-  flex: 1;
-}
-
-.session-book {
-  padding: 10px 18px;
-  border: 1px solid #50505c;
-  border-radius: 8px;
-  background: #24242b;
-  color: #f2f2f3;
-  text-decoration: none;
-  text-align: center;
-}
-
-.session-book:hover {
-  background: #353540;
-}
-
-.date-button--selected {
-  background: #c4b5fd;
-  border-color: #c4b5fd;
-  color: #171320;
-}
-
-.date-button--selected:hover:not(:disabled) {
-  background: #d4c8ff;
 }
 
 a {
@@ -1515,12 +1198,6 @@ a {
   height: 22px;
 }
 
-.movie-card--selected {
-  border-color: #c4b5fd;
-  box-shadow: inset 0 0 0 1px #c4b5fd;
-}
-
-.movie-card:focus-visible,
 .top-movies-track:focus-visible {
   outline: 2px solid #c4b5fd;
   outline-offset: -3px;
@@ -1541,6 +1218,7 @@ a {
 }
 
 .top-movie-card {
+  position: relative;
   min-width: 0;
   overflow: hidden;
   border: 1px solid #303036;
@@ -1591,6 +1269,26 @@ a {
   margin: 0 0 14px;
 }
 
+.movie-card-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.movie-card-link:hover { color: #c4b5fd; }
+
+.movie-card-link::after,
+.top-movie-title::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.movie-card:has(.movie-card-link:focus-visible),
+.top-movie-card:has(.top-movie-title:focus-visible) {
+  outline: 2px solid #b6a0ff;
+  outline-offset: -3px;
+}
+
 .top-movie-title {
   padding: 0;
   border: 0;
@@ -1604,7 +1302,7 @@ a {
   text-underline-offset: 4px;
 }
 
-.top-movie-title:hover:not(:disabled) {
+.top-movie-title:hover {
   background: transparent;
   color: #c4b5fd;
 }
