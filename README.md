@@ -25,6 +25,12 @@ Open a film, pick a future session and choose seats. Complete demo checkout to s
 
 [More commands, checks and troubleshooting](docs/README.md#english) · [SRS](SRS.md)
 
+### Load testing
+
+| Participant | Tool | Level | Scenario |
+| --- | --- | --- | --- |
+| Lera | [Artillery](docs/testing/artillery.md) | API | Concurrent booking of the same seat |
+
 ## Eesti
 
 [Ava eestikeelne README](README.et.md).
