@@ -1,0 +1,95 @@
+{
+  "Dune: Part Two": {
+    "src": "/images/movie-banners/1.webp",
+    "sourcePage": "https://www.acmodasi.in/amdb/movie/693134-dune-part-two-2024/images/type-backdrops",
+    "sourceImage": "https://www.acmodasi.in/amdb/images/movie/w1920/69/31/dune-part-two-2024-529070.webp",
+    "layout": "poster",
+    "width": 1920,
+    "height": 1080
+  },
+  "Interstellar": {
+    "src": "/images/movie-banners/2.webp",
+    "sourcePage": "https://www.acmodasi.in/amdb/movie/157336-interstellar-2014/images/type-backdrops",
+    "sourceImage": "https://www.acmodasi.in/amdb/images/movie/w1920/15/73/interstellar-2014-164843.webp"
+  },
+  "Oppenheimer": {
+    "src": "/images/movie-banners/3.webp",
+    "sourcePage": "https://www.acmodasi.in/amdb/movie/872585-oppenheimer-2023/images/type-backdrops",
+    "sourceImage": "https://www.acmodasi.in/amdb/images/movie/w1920/87/25/oppenheimer-2023-1255.webp",
+    "layout": "poster",
+    "width": 1920,
+    "height": 1080
+  },
+  "Inception": {
+    "src": "/images/movie-banners/4.webp",
+    "sourcePage": "https://www.acmodasi.in/amdb/movie/27205-inception-2010/images/type-backdrops",
+    "sourceImage": "https://www.acmodasi.in/amdb/images/movie/w1920/2/72/inception-2010-7399.webp",
+    "layout": "poster",
+    "width": 1920,
+    "height": 1080
+  },
+  "The Dark Knight": {
+    "src": "/images/movie-banners/5.webp",
+    "sourcePage": "https://www.acmodasi.in/amdb/movie/155-the-dark-knight-2008/images/type-backdrops",
+    "sourceImage": "https://www.acmodasi.in/amdb/images/movie/w1920/0/1/the-dark-knight-2008-13506.webp",
+    "layout": "poster",
+    "width": 1920,
+    "height": 1080
+  },
+  "The Matrix": {
+    "src": "/images/movie-banners/6.webp",
+    "sourcePage": "https://www.acmodasi.in/amdb/movie/603-the-matrix-1999/images/type-backdrops",
+    "sourceImage": "https://www.acmodasi.in/amdb/images/movie/w1920/0/6/the-matrix-1999-14272.webp",
+    "layout": "poster",
+    "width": 1920,
+    "height": 1080
+  },
+  "Avatar: The Way of Water": {
+    "src": "/images/movie-banners/7.webp",
+    "sourcePage": "https://www.acmodasi.in/amdb/movie/76600-avatar-the-way-of-water-2022/images/type-backdrops",
+    "sourceImage": "https://www.acmodasi.in/amdb/images/movie/w1920/7/66/avatar-the-way-of-water-2022-2398.webp",
+    "layout": "poster",
+    "width": 1920,
+    "height": 1080
+  },
+  "Spider-Man: Across the Spider-Verse": {
+    "src": "/images/movie-banners/8.webp",
+    "sourcePage": "https://www.acmodasi.in/amdb/movie/569094-spider-man-across-the-spider-verse-2023/images/type-backdrops",
+    "sourceImage": "https://www.acmodasi.in/amdb/images/movie/w1920/56/90/spider-man-across-the-spider-verse-2023-3046.webp",
+    "layout": "poster",
+    "width": 1920,
+    "height": 1080
+  },
+  "Barbie": {
+    "src": "/images/movie-banners/9.webp",
+    "sourcePage": "https://www.acmodasi.in/amdb/movie/346698-barbie-2023/images/type-backdrops",
+    "sourceImage": "https://www.acmodasi.in/amdb/images/movie/w1920/34/66/barbie-2023-2798.webp",
+    "layout": "poster",
+    "width": 1920,
+    "height": 1080
+  },
+  "The Batman": {
+    "src": "/images/movie-banners/10.webp",
+    "sourcePage": "https://www.acmodasi.in/amdb/movie/414906-the-batman-2022/images/type-backdrops",
+    "sourceImage": "https://www.acmodasi.in/amdb/images/movie/w1920/41/49/the-batman-2022-10383.webp",
+    "layout": "poster",
+    "width": 1920,
+    "height": 1080
+  },
+  "Everything Everywhere All at Once": {
+    "src": "/images/movie-banners/11.webp",
+    "sourcePage": "https://www.acmodasi.in/amdb/movie/545611-everything-everywhere-all-at-once-2022/images/type-backdrops",
+    "sourceImage": "https://www.acmodasi.in/amdb/images/movie/w1920/54/56/everything-everywhere-all-at-once-2022-799301.webp",
+    "layout": "poster",
+    "width": 1920,
+    "height": 1080
+  },
+  "Whiplash": {
+    "src": "/images/movie-banners/12.webp",
+    "sourcePage": "https://www.acmodasi.in/amdb/movie/244786-whiplash-2014/images/type-backdrops",
+    "sourceImage": "https://www.acmodasi.in/amdb/images/movie/w1920/24/47/whiplash-2014-16052.webp",
+    "layout": "poster",
+    "width": 1920,
+    "height": 1080
+  }
+}

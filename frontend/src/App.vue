@@ -5,7 +5,11 @@ import SiteHeader from './components/SiteHeader.vue'
 
 <template>
   <SiteHeader />
-  <RouterView />
+  <RouterView v-slot="{ Component }">
+    <KeepAlive include="MoviesView">
+      <component :is="Component" />
+    </KeepAlive>
+  </RouterView>
 </template>
 
 <style>

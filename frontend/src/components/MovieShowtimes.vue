@@ -26,6 +26,18 @@ const availableWeeks = computed(() =>
   [...new Set(sessions.value.map((session) => getSessionWeekStart(session.date)))].sort(),
 )
 
+const availableDates = computed(() =>
+  [...new Set(sessions.value
+    .filter((session) => !selectedWeek.value || getSessionWeekStart(session.date) === selectedWeek.value)
+    .map((session) => session.date))].sort(),
+)
+
+const weekday = new Intl.DateTimeFormat('en', { weekday: 'short', timeZone: 'UTC' })
+
+function formatDay(date: string) {
+  return weekday.format(new Date(date + 'T00:00:00Z'))
+}
+
 const filteredSessions = computed(() => {
   if (selectedDate.value) {
     return sessions.value.filter((session) => session.date === selectedDate.value)
@@ -61,6 +73,7 @@ watch(
 <template>
   <section
     id="sessions"
+    tabindex="-1"
     role="region"
     aria-labelledby="movie-sessions-title"
     class="movie-sessions"
@@ -70,10 +83,7 @@ watch(
     <div v-if="sessions.length" class="session-dates" role="group" aria-label="Session weeks">
       <button
         type="button"
-        :class="{
-          'date-button--selected': !selectedDate && selectedWeek === '',
-        }"
-        :aria-pressed="!selectedDate && selectedWeek === ''"
+        :aria-pressed="selectedWeek === ''"
         @click="selectWeek('')"
       >
         All weeks
@@ -82,20 +92,28 @@ watch(
         v-for="week in availableWeeks"
         :key="week"
         type="button"
-        :class="{
-          'date-button--selected': !selectedDate && selectedWeek === week,
-        }"
-        :aria-pressed="!selectedDate && selectedWeek === week"
+        :aria-pressed="selectedWeek === week"
         @click="selectWeek(week)"
       >
         {{ formatSessionWeek(week) }}
       </button>
     </div>
 
-    <label v-if="sessions.length" class="session-date-filter">
-      Date:
-      <input v-model="selectedDate" type="date" />
-    </label>
+    <div v-if="sessions.length" class="session-days" role="group" aria-label="Screening dates">
+      <button type="button" :aria-pressed="selectedDate === ''" @click="selectedDate = ''">
+        All dates
+      </button>
+      <button
+        v-for="date in availableDates"
+        :key="date"
+        type="button"
+        :aria-pressed="selectedDate === date"
+        @click="selectedDate = date"
+      >
+        <strong>{{ formatDay(date) }}</strong>
+        <span>{{ formatSessionDate(date) }}</span>
+      </button>
+    </div>
 
     <p v-if="sessionsLoading" role="status">Loading sessions...</p>
 
@@ -103,15 +121,13 @@ watch(
       Could not load showtimes. Refresh to try again.
     </p>
 
-    <p v-else-if="filteredSessions.length === 0">
-      {{
-        selectedDate
-          ? 'No sessions available for this date.'
-          : selectedWeek
-            ? 'No sessions available for this week.'
-            : 'No upcoming showtimes for this movie.'
-      }}
-    </p>
+    <div v-else-if="!sessions.length" class="schedule-empty">
+      <h3>No upcoming showtimes</h3>
+      <p>There are no screenings scheduled for this film.</p>
+      <RouterLink class="session-book" :to="{ name: 'movies' }">
+        Browse movies
+      </RouterLink>
+    </div>
 
     <template v-else>
       <div
@@ -156,8 +172,11 @@ watch(
 <style scoped>
 .movie-sessions {
   margin-top: 32px;
-  padding-top: 12px;
-  border-top: 1px solid #303036;
+  padding: clamp(16px, 3vw, 28px);
+  border: 1px solid #38313f;
+  border-radius: 20px;
+  background: #15121a;
+  scroll-margin-top: 16px;
 }
 
 .movie-sessions h2 {
@@ -172,13 +191,30 @@ watch(
   margin-bottom: 12px;
 }
 
-.session-date-filter {
+.session-days {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 8px;
+  overflow-x: auto;
+  padding: 4px 4px 12px;
 }
+
+.session-days button {
+  display: grid;
+  place-content: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  min-width: 96px;
+  min-height: 60px;
+}
+
+.session-days span { font-size: 12px; }
+.schedule-empty {
+  padding: 24px;
+  border: 1px dashed #51425f;
+  border-radius: 14px;
+}
+.schedule-empty h3 { margin: 0; }
+.schedule-empty p { color: #c8c0d4; margin: 8px 0 18px; }
 
 .session-item {
   display: flex;
@@ -217,39 +253,33 @@ watch(
 }
 
 .session-book {
+  display: inline-block;
   padding: 10px 18px;
   border: 1px solid #50505c;
   border-radius: 8px;
-  background: #24242b;
-  color: #f2f2f3;
+  background: #c4b5fd;
+  color: #20152f;
+  font-weight: 700;
   text-decoration: none;
   text-align: center;
 }
 
 .session-book:hover {
-  background: #353540;
-}
-
-.date-button--selected {
-  background: #c4b5fd;
-  border-color: #c4b5fd;
-  color: #171320;
-}
-
-.date-button--selected:hover:not(:disabled) {
-  background: #d4c8ff;
+  background: #ded5ff;
 }
 
 .session-dates button,
-.session-date-filter input {
+.session-days button {
   padding: 8px 12px;
   border: 1px solid #50505c;
   border-radius: 8px;
   background: #24242b;
   color: inherit;
   font: inherit;
+  cursor: pointer;
 }
-.session-dates button { cursor: pointer; }
-.session-dates .date-button--selected { background: #c4b5fd; color: #171320; }
-.session-dates .date-button--selected:hover { background: #d4c8ff; }
+.movie-sessions button[aria-pressed="true"] {
+  background: #c4b5fd;
+  color: #171320;
+}
 </style>

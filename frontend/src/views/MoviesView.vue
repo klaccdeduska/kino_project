@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { computed, onActivated, onMounted, ref } from 'vue'
+import { onBeforeRouteLeave, RouterLink } from 'vue-router'
 import { getMovies, type CatalogMovie as Movie } from '../api'
 import movieBackdrops from '../data/movieBackdrops.json'
 onMounted(() => {
@@ -46,6 +46,18 @@ const loading = ref(true)
 const error = ref('')
 const moviesTrack = ref<HTMLDivElement | null>(null)
 const topMoviesTrack = ref<HTMLDivElement | null>(null)
+let catalogScrollLeft = 0
+let topMoviesScrollLeft = 0
+
+onBeforeRouteLeave(() => {
+  catalogScrollLeft = moviesTrack.value?.scrollLeft ?? 0
+  topMoviesScrollLeft = topMoviesTrack.value?.scrollLeft ?? 0
+})
+
+onActivated(() => {
+  moviesTrack.value?.scrollTo({ left: catalogScrollLeft, behavior: 'instant' })
+  topMoviesTrack.value?.scrollTo({ left: topMoviesScrollLeft, behavior: 'instant' })
+})
 
 function scrollTopMovies(direction: number) {
   const track = topMoviesTrack.value
@@ -580,7 +592,8 @@ async function loadMovies() {
 
 .featured-movie {
   position: relative;
-  height: 560px;
+  display: grid;
+  min-height: 560px;
   margin: 24px 0 40px;
   overflow: hidden;
   border: 1px solid #44364f;
@@ -589,17 +602,15 @@ async function loadMovies() {
 }
 
 .featured-slide {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  grid-area: 1 / 1;
   box-sizing: border-box;
   isolation: isolate;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
   gap: 32px;
-  grid-template-rows: minmax(0, 1fr);
-  min-height: 0;
-  padding: 64px 76px 84px;
+  padding: clamp(32px, 5vw, 64px) clamp(48px, 7vw, 76px) 84px;
   background: radial-gradient(ellipse at 75% 40%, #392849, #141019 75%);
 }
 
@@ -625,9 +636,6 @@ async function loadMovies() {
 
 .featured-copy {
   min-width: 0;
-  min-height: 0;
-  max-height: 100%;
-  overflow-y: auto;
   overflow-wrap: anywhere;
   max-width: 620px;
 }
@@ -646,10 +654,11 @@ async function loadMovies() {
 .featured-copy h2 {
   margin: 20px 0 12px;
   color: #fff;
-  font-size: clamp(32px, 5vw, 60px);
+  font-size: clamp(30px, 4.5vw, 60px);
   line-height: 1.05;
   letter-spacing: -1px;
   overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 .featured-meta {
@@ -703,13 +712,13 @@ async function loadMovies() {
 
 @media (max-width: 600px) {
   .featured-movie {
-    height: 600px;
+    min-height: 480px;
     border-radius: 16px;
   }
 
   .featured-slide {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-rows: 1fr auto;
     gap: 16px;
     padding: 44px 48px 76px;
   }

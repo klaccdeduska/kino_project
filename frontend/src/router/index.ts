@@ -7,11 +7,15 @@ import AuthView from '../views/AuthView.vue'
 import MyTicketsView from '../views/MyTicketsView.vue'
 import AccountView from '../views/AccountView.vue'
 
+let cataloguePosition: { top: number; left: number } | undefined
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   scrollBehavior(to, _from, savedPosition) {
     if (savedPosition) return savedPosition
-    return to.hash ? { el: to.hash } : { top: 0 }
+    if (to.hash) return { el: to.hash }
+    if (to.name === 'movies' && cataloguePosition) return cataloguePosition
+    return { top: 0 }
   },
   routes: [
     { path: '/login', name: 'login', component: AuthView },
@@ -45,6 +49,12 @@ const router = createRouter({
       component: AccountView,
     },
   ],
+})
+
+router.beforeEach((to, from) => {
+  if (from.name === 'movies' && to.name !== 'movies') {
+    cataloguePosition = { top: window.scrollY, left: window.scrollX }
+  }
 })
 
 export default router
