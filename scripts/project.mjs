@@ -80,8 +80,6 @@ async function database(prepare = false, refresh = false) {
         const halls = readFileSync(path.join(root, 'database/halls.sql'), 'utf8');
         await connection.query(movies.slice(movies.indexOf('INSERT INTO movies')).replace(/ON DUPLICATE KEY UPDATE[\s\S]+$/, 'ON DUPLICATE KEY UPDATE id = id;'));
         await connection.query(halls.slice(halls.indexOf('INSERT INTO halls')));
-        const [sessions] = await connection.query('SELECT id FROM sessions LIMIT 1');
-        if (sessions.length === 0) await refreshSessions(connection);
       } else {
         await prepareLegacyDatabase(connection);
       }
@@ -148,13 +146,13 @@ async function setup() {
     appendFileSync(envPath, '\nJWT_SECRET=' + randomBytes(32).toString('hex') + '\n');
     console.log('Generated a local JWT signing secret in backend/.env.');
   }
-  await database(true);
+  await database(true, true);
   await run('npm', ['run', 'prisma:generate'], path.join(root, 'backend'));
   console.log('Setup complete. Run npm run dev. Existing SQL/Prisma migrations are managed separately; see README.md.');
 }
 
 async function dev() {
-  await database();
+  await database(false, true);
   const children = [];
   let stopping = false;
   const stop = (code = 0) => {

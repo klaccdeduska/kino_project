@@ -19,6 +19,6 @@ Ava [veebirakendus](http://localhost:5173). Kui PowerShell blokeerib npm-i, kasu
 
 ## Proovi demot
 
-Ava film, vali tulevane seanss ja istekoht. Pärast demoostu saad pileti printida. Kui ajakava on aegunud, käivita projekti juurkaustas `npm run db:refresh-sessions` ja laadi kataloog uuesti.
+Ava film, vali tulevane seanss ja istekoht. Pärast demoostu saad pileti printida. Seadistamisel ja käsuga `npm run dev` käivitamisel täiendatakse kohalikku demoajakava järgmise 30 päeva seanssidega. Olemasolevate seansside ajad ja ID-d säilivad. Kui sait on kaua töötanud, käivita projekti juurkaustas `npm run db:refresh-sessions` ja laadi kataloog uuesti.
 
 [Lisakäsud, kontrollid ja tõrkeotsing](docs/README.md#eesti) · [SRS](SRS.md)

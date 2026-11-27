@@ -21,7 +21,7 @@ Open [the site](http://localhost:5173). If PowerShell blocks npm, use `npm.cmd`.
 
 ### Try the demo
 
-Open a film, pick a future session and choose seats. Complete demo checkout to see the printable ticket. If the schedule has expired, run `npm run db:refresh-sessions` from the project root and reload the catalogue.
+Open a film, pick a future session and choose seats. Complete demo checkout to see the printable ticket. Setup and development startup extend the local demo schedule by adding available slots for the next 30 days. Existing sessions keep their IDs and dates. If the app has been running for a long time, run `npm run db:refresh-sessions` from the project root and reload the catalogue.
 
 [More commands, checks and troubleshooting](docs/README.md#english) · [SRS](SRS.md)
 

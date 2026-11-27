@@ -23,18 +23,20 @@ try {
   await connection.query(`INSERT INTO sessions (id, movie_id, hall_id, starts_at)
     VALUES (5000, 1, 1, '2026-01-01 14:30:00')`);
   const first = await refreshSessions(connection);
-  assert.ok(first.added >= 93 && first.added <= 96);
+  assert.ok(first.added >= 98 && first.added <= 102);
   assert.equal(first.skipped, 0);
   const second = await refreshSessions(connection);
   assert.equal(second.added, 0);
   const [[counts]] = await connection.query(`SELECT COUNT(*) AS total,
     SUM(starts_at > NOW()) AS upcoming,
     COUNT(DISTINCT CASE WHEN starts_at > NOW() THEN DATE(starts_at) END) AS days,
+    COUNT(DISTINCT CASE WHEN starts_at > NOW() THEN movie_id END) AS movies,
     MIN(CASE WHEN starts_at > NOW() THEN DATEDIFF(starts_at, CURDATE()) END) AS first_day,
     MAX(DATEDIFF(starts_at, CURDATE())) AS last_day FROM sessions`);
   assert.equal(Number(counts.total), first.added + 1);
   assert.equal(Number(counts.upcoming), first.added);
   assert.equal(Number(counts.days), 30);
+  assert.equal(Number(counts.movies), 12);
   assert.equal(Number(counts.first_day), 1);
   assert.equal(Number(counts.last_day), 30);
   const [[old]] = await connection.query('SELECT movie_id FROM sessions WHERE id = 5000');
