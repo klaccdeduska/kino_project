@@ -1,0 +1,30 @@
+services:
+  db:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: sysbench_local_root
+      MARIADB_DATABASE: kino_bench
+      MARIADB_USER: kino_bench
+      MARIADB_PASSWORD: sysbench_local
+      TZ: Europe/Tallinn
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 2s
+      retries: 60
+    tmpfs:
+      - /var/lib/mysql
+    volumes:
+      - ./backend/prisma/migrations/0_init/migration.sql:/docker-entrypoint-initdb.d/00-movies.sql:ro
+      - ./backend/prisma/migrations/2_add_cinema_schema/migration.sql:/docker-entrypoint-initdb.d/02-cinema.sql:ro
+      - ./backend/prisma/migrations/3_normalize_cinema_constraints/migration.sql:/docker-entrypoint-initdb.d/03-constraints.sql:ro
+      - ./tests/load/sysbench/seed.sql:/docker-entrypoint-initdb.d/04-seed.sql:ro
+
+  sysbench:
+    build: ./tests/load/sysbench
+    depends_on:
+      db:
+        condition: service_healthy
+
+networks:
+  default:
+    internal: true

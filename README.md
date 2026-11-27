@@ -25,6 +25,15 @@ Open a film, pick a future session and choose seats. Complete demo checkout to s
 
 [More commands, checks and troubleshooting](docs/README.md#english) · [SRS](SRS.md)
 
+### Load testing
+
+| Participant | Tool | Level | Scenario |
+| --- | --- | --- | --- |
+| Richard | k6 | API | Concurrent requests for the screenings list |
+| Lera | Artillery | API | Concurrent attempts to book the same seat |
+| Misha | [sysbench](docs/testing/sysbench.md) | Database | Concurrent upcoming screenings queries by film |
+| Dania | mysqlslap | Database | Query performance with and without an index |
+
 ## Eesti
 
 [Ava eestikeelne README](README.et.md).
