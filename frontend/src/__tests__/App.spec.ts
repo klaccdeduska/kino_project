@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
+import { i18n, type Locale } from '../i18n'
 import App from '../App.vue'
+import SiteHeader from '../components/SiteHeader.vue'
 import PaymentView from '../views/PaymentView.vue'
 import BookingView from '../views/BookingView.vue'
 import TicketsView from '../views/TicketsView.vue'
@@ -16,6 +18,7 @@ import {
 afterEach(() => vi.unstubAllGlobals())
 
 beforeEach(() => {
+  i18n.global.locale.value = 'et'
   vi.stubGlobal(
     'fetch',
     vi.fn((url: string) =>
@@ -28,6 +31,46 @@ beforeEach(() => {
   )
   localStorage.clear()
   bookingState.value = { draft: null, orders: [] }
+})
+
+describe('Localized site navigation', () => {
+  it.each([
+    ['et', 'Peamenüü', 'Filmid', 'Logi sisse', 'Loo konto'],
+    ['ru', 'Главная навигация', 'Фильмы', 'Войти', 'Регистрация'],
+    ['en', 'Main navigation', 'Movies', 'Sign in', 'Sign up'],
+  ])('shows %s labels', (locale, navigation, movies, signIn, signUp) => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/', component: { template: '<p>Movies</p>' } }],
+    })
+    i18n.global.locale.value = locale as Locale
+
+    const wrapper = mount(SiteHeader, { global: { plugins: [router, i18n] } })
+
+    expect(wrapper.get('nav').attributes('aria-label')).toBe(navigation)
+    expect(wrapper.text()).toContain(movies)
+    expect(wrapper.text()).toContain(signIn)
+    expect(wrapper.text()).toContain(signUp)
+    wrapper.unmount()
+  })
+
+  it('switches the header language and stores the selection', async () => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/', component: { template: '<p>Movies</p>' } }],
+    })
+    const wrapper = mount(SiteHeader, { global: { plugins: [router, i18n] } })
+    await flushPromises()
+
+    await wrapper.get('select').setValue('ru')
+
+    expect(wrapper.get('nav').attributes('aria-label')).toBe(
+      'Главная навигация',
+    )
+    expect(wrapper.text()).toContain('Фильмы')
+    expect(localStorage.getItem('kino-locale')).toBe('ru')
+    wrapper.unmount()
+  })
 })
 
 describe('Demo booking', () => {
@@ -56,7 +99,7 @@ describe('Demo booking', () => {
       ],
     })
     await router.push('/payment')
-    const wrapper = mount(App, { global: { plugins: [router] } })
+    const wrapper = mount(App, { global: { plugins: [router, i18n] } })
     expect(wrapper.text()).toContain('16.00 €')
     expect(wrapper.text()).toContain('21.10.2026 — 18:00 · Hall 2')
     await wrapper
@@ -85,7 +128,7 @@ describe('Demo booking', () => {
     const confirmationPath = router.currentRoute.value.fullPath
     wrapper.unmount()
     await router.push(confirmationPath)
-    const reopened = mount(App, { global: { plugins: [router] } })
+    const reopened = mount(App, { global: { plugins: [router, i18n] } })
     expect(reopened.findAll('article')).toHaveLength(2)
     expect(
       reopened.findAll('article img').map((img) => img.attributes('src')),
@@ -94,7 +137,7 @@ describe('Demo booking', () => {
     expect(reopened.get('article').text()).toContain('Child · 6.00 €')
     reopened.unmount()
     await router.push('/payment')
-    const emptyPayment = mount(App, { global: { plugins: [router] } })
+    const emptyPayment = mount(App, { global: { plugins: [router, i18n] } })
     expect(emptyPayment.text()).toContain('No seats selected')
     emptyPayment.unmount()
   })
@@ -215,7 +258,7 @@ describe('Demo booking', () => {
     })
     await router.push('/booking/1?sessionId=10')
     vi.useFakeTimers()
-    const wrapper = mount(App, { global: { plugins: [router] } })
+    const wrapper = mount(App, { global: { plugins: [router, i18n] } })
     try {
       await flushPromises()
       expect(wrapper.get('[role="timer"]').text()).toContain('10:00')

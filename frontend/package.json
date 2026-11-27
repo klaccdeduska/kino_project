@@ -19,6 +19,7 @@
   "dependencies": {
     "qrcode-generator": "^2.0.4",
     "vue": "^3.5.42",
+    "vue-i18n": "^11.4.24",
     "vue-router": "^5.3.1"
   },
   "devDependencies": {

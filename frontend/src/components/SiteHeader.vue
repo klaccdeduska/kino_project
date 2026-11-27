@@ -1,10 +1,38 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { RouterLink, useRouter } from 'vue-router'
 import { currentUser, loadCurrentUser, logout } from '../stores/auth'
+import { setLocale, type Locale } from '../i18n'
 
 const router = useRouter()
+const { t, locale } = useI18n()
+const localeSaveError = ref(false)
 onMounted(() => void loadCurrentUser())
+
+async function changeLocale(event: Event) {
+  const selectedLocale = (event.currentTarget as HTMLSelectElement)
+    .value as Locale
+  setLocale(selectedLocale)
+  localeSaveError.value = false
+
+  if (!currentUser.value) return
+
+  try {
+    const response = await fetch('/api/auth/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ language: selectedLocale }),
+    })
+
+    if (!response.ok) throw new Error('Could not save preferred language')
+    currentUser.value.language = selectedLocale
+  } catch (error) {
+    localeSaveError.value = true
+    console.error(error)
+  }
+}
 
 async function signOut() {
   await logout()
@@ -14,20 +42,36 @@ async function signOut() {
 
 <template>
   <header class="site-header">
-    <nav class="site-navigation" aria-label="Main navigation">
+    <nav class="site-navigation" :aria-label="t('nav.mainNavigation')">
       <RouterLink class="site-brand" to="/"
         >BUBLIKI<span>CINEMA</span></RouterLink
       >
-      <RouterLink class="catalog-link" to="/#movies">Movies</RouterLink>
-      <div v-if="currentUser" class="account-links">
-        <RouterLink class="sign-in" to="/my-tickets">My tickets</RouterLink>
-        <RouterLink class="sign-in" to="/account">Profile</RouterLink>
-        <button type="button" class="sign-in" @click="signOut">Log out</button>
-      </div>
-
-      <div v-else class="account-links">
-        <RouterLink class="sign-in" to="/login">Sign in</RouterLink>
-        <RouterLink class="sign-up" to="/register">Sign up</RouterLink>
+      <RouterLink class="catalog-link" to="/#movies">{{ t('nav.movies') }}</RouterLink>
+      <div class="account-links">
+        <label class="locale-picker">
+          <span class="visually-hidden">{{ t('nav.language') }}</span>
+          <select
+            :value="locale"
+            :aria-label="t('nav.language')"
+            @change="changeLocale"
+          >
+            <option value="et">ET</option>
+            <option value="ru">RU</option>
+            <option value="en">EN</option>
+          </select>
+        </label>
+        <span v-if="localeSaveError" class="visually-hidden" role="status">
+          {{ t('nav.languageSaveFailed') }}
+        </span>
+        <template v-if="currentUser">
+        <RouterLink class="sign-in" to="/my-tickets">{{ t('nav.tickets') }}</RouterLink>
+        <RouterLink class="sign-in" to="/account">{{ t('nav.profile') }}</RouterLink>
+        <button type="button" class="sign-in" @click="signOut">{{ t('nav.logout') }}</button>
+        </template>
+        <template v-else>
+        <RouterLink class="sign-in" to="/login">{{ t('nav.login') }}</RouterLink>
+        <RouterLink class="sign-up" to="/register">{{ t('nav.signUp') }}</RouterLink>
+        </template>
       </div>
     </nav>
   </header>
@@ -52,7 +96,6 @@ async function signOut() {
 }
 
 .site-brand {
-  margin: 0;
   font-size: 24px;
   font-weight: 700;
   letter-spacing: 2px;
@@ -72,7 +115,8 @@ async function signOut() {
 }
 
 .site-navigation a:focus-visible,
-.account-links button:focus-visible {
+.account-links button:focus-visible,
+.locale-picker select:focus-visible {
   outline: 2px solid #c4b5fd;
   outline-offset: 4px;
 }
@@ -105,6 +149,18 @@ async function signOut() {
   cursor: pointer;
 }
 
+.locale-picker select {
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid #5d5068;
+  border-radius: 8px;
+  color: inherit;
+  background: #211a29;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
 .account-links .sign-up {
   background: #c4b5fd;
   color: #20152f;
@@ -117,7 +173,7 @@ async function signOut() {
 
 @media (max-width: 600px) {
   .site-navigation {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto 1fr;
     gap: 4px;
     padding: 10px 12px;
   }
@@ -132,7 +188,7 @@ async function signOut() {
   }
 
   .catalog-link {
-    justify-self: center;
+    justify-self: end;
   }
 
   .catalog-link,
@@ -143,16 +199,15 @@ async function signOut() {
   }
 
   .account-links {
+    grid-column: 1 / -1;
+    justify-self: end;
     gap: 4px;
   }
-}
 
-@media (max-width: 410px) {
-  .site-navigation {
-    grid-template-columns: 1fr auto;
-  }
-  .account-links {
-    grid-column: 1 / -1;
+  .locale-picker select {
+    min-height: 34px;
+    padding: 6px 6px;
+    font-size: 11px;
   }
 }
 

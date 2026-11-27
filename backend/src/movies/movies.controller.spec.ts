@@ -25,6 +25,9 @@ describe('Upcoming sessions', () => {
     expect(query).toHaveBeenCalledWith(
       expect.stringContaining('s.starts_at > NOW()'),
     );
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining("catalog.title NOT LIKE '[LOAD]%'"),
+    );
   });
 
   it('filters session lists in SQL without serving stale cached results', async () => {

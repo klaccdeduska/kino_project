@@ -70,6 +70,7 @@ export class MoviesService {
         WHERE s.movie_id = catalog.id AND s.starts_at > NOW()
       ) AS hasUpcomingSessions
       FROM (${SELECT_MOVIES}) AS catalog
+      WHERE catalog.title NOT LIKE '[LOAD]%'
       ORDER BY catalog.id
     `);
 
