@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { ApiError, getMovie, type Movie } from '../api'
+import MovieShowtimes from '../components/MovieShowtimes.vue'
 import movieBackdrops from '../data/movieBackdrops.json'
 
 const props = defineProps<{ movieId: string }>()
@@ -47,7 +48,7 @@ watch(
     <h1 v-else-if="status === 'missing'">Movie not found</h1>
     <p v-else-if="status === 'error'" role="alert">Could not load the movie. Refresh to try again.</p>
     <template v-else-if="movie">
-      <section class="movie-hero" aria-labelledby="movie-title">
+      <section class="movie-hero" :class="{ 'has-poster': movie.poster }" aria-labelledby="movie-title">
         <img
           v-if="backdrop"
           class="movie-backdrop"
@@ -68,6 +69,7 @@ watch(
           <p>{{ movie.description }}</p>
         </div>
       </section>
+      <MovieShowtimes :movie-id="movie.id" :duration="movie.duration" />
     </template>
   </main>
 </template>
@@ -120,7 +122,7 @@ watch(
   border-radius: 12px;
 }
 .movie-copy { grid-column: 2; line-height: 1.6; overflow-wrap: anywhere; }
-.movie-copy:only-child { grid-column: 1 / -1; }
+.movie-hero:not(.has-poster) .movie-copy { grid-column: 1 / -1; }
 .movie-copy h1 { margin: 0 0 16px; font-size: clamp(30px, 5vw, 58px); line-height: 1.05; }
 .movie-meta { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; }
 .movie-meta li { padding: 4px 10px; background: #221a2de6; border-radius: 8px; }
