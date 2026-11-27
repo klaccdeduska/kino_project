@@ -93,6 +93,16 @@ test('shows a film from the cinema catalogue', async ({ page }) => {
   await expect(
     page.getByRole('heading', { name: 'Explore the cinema' }),
   ).toBeVisible()
+
+  await navigation.getByRole('link', { name: 'Sign in' }).click()
+  await navigation.getByRole('button', { name: 'Search movies' }).click()
+  await expect(page).toHaveURL(/\/#movie-search$/)
+  const search = page.getByRole('searchbox', { name: 'Search movies:' })
+  await expect(search).toBeFocused()
+  await search.fill('Interstellar')
+  await navigation.getByRole('button', { name: 'Search movies' }).click()
+  await expect(search).toBeFocused()
+  await expect(search).toHaveValue('Interstellar')
 })
 
 test('keeps the filtered catalogue and scroll position when returning from a film', async ({ page }) => {

@@ -27,6 +27,7 @@ const banner = computed(() =>
 const media = computed(() => (movie.value ? mediaByTitle[movie.value.title] : undefined))
 const mediaDialog = ref<HTMLDialogElement | null>(null)
 const openMedia = ref<'trailer' | number | null>(null)
+const trailerLoading = ref(false)
 const trailerUrl = computed(() => {
   const source = movie.value?.trailer
   const fallback = media.value ? `https://www.youtube.com/watch?v=${media.value.trailerId}` : null
@@ -91,6 +92,7 @@ function closeFromBackdrop(event: PointerEvent) {
 
 function showMedia(item: 'trailer' | number) {
   if (!mediaDialog.value) return
+  trailerLoading.value = item === 'trailer' && Boolean(trailerEmbed.value)
   openMedia.value = item
   mediaDialog.value.showModal()
 }
@@ -192,16 +194,19 @@ watch(
             <form method="dialog"><button type="submit" autofocus aria-label="Close">✕</button></form>
           </header>
           <template v-if="openMedia === 'trailer' && trailerUrl">
-            <iframe
-              v-if="trailerEmbed"
-              :src="trailerEmbed"
-              :title="`${movie.title} trailer`"
-              referrerpolicy="strict-origin-when-cross-origin"
-              allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-              allowfullscreen
-            ></iframe>
-            <a class="trailer-source" :href="trailerUrl" target="_blank" rel="noopener noreferrer">
-              Open trailer in a new tab ↗
+            <div v-if="trailerEmbed" class="trailer-player" :aria-busy="trailerLoading">
+              <iframe
+                :src="trailerEmbed"
+                :title="`${movie.title} trailer`"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                allowfullscreen
+                @load="trailerLoading = false"
+              ></iframe>
+            </div>
+            <p v-if="trailerLoading" class="trailer-loading" role="status">Loading trailer…</p>
+            <a class="trailer-source trailer-external" :href="trailerUrl" target="_blank" rel="noopener noreferrer">
+              {{ trailerEmbed ? 'Watch on YouTube ↗' : 'Open trailer in a new tab ↗' }}
             </a>
           </template>
           <template v-else-if="currentFrame">
@@ -290,6 +295,18 @@ watch(
   color: #d5c7ff;
   font-weight: 700;
   text-decoration: none;
+}
+
+.trailer-player {
+  background: #0d0d0f;
+  border-radius: 8px;
+}
+
+.trailer-loading { margin: 12px 0 0; color: #c8c0d4; }
+.trailer-external {
+  padding: 8px 12px;
+  border: 1px solid #615472;
+  border-radius: 8px;
 }
 
 .movie-navigation a:hover,

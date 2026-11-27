@@ -525,7 +525,6 @@ async function loadMovies() {
             </h3>
             <p class="movie-director">{{ movie.director }}</p>
             <p>{{ movie.genre }} · {{ movie.duration }} min</p>
-            <p>{{ movie.description }}</p>
             <p>{{ movie.releaseYear }} · {{ movie.ageRating }}</p>
 
           </article>
@@ -879,6 +878,10 @@ main {
   align-items: center;
   gap: 10px;
   margin-bottom: 16px;
+}
+
+#movie-search {
+  scroll-margin-top: 24px;
 }
 
 .catalog-heading {

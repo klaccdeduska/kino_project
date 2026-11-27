@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRouter } from 'vue-router'
 import { currentUser, loadCurrentUser, logout } from '../stores/auth'
@@ -9,6 +9,15 @@ const router = useRouter()
 const { t, locale } = useI18n()
 const localeSaveError = ref(false)
 onMounted(() => void loadCurrentUser())
+
+async function openMovieSearch() {
+  const failure = await router.push({ name: 'movies', hash: '#movie-search' })
+  if (failure && router.currentRoute.value.name !== 'movies') return
+  await nextTick()
+  const search = document.getElementById('movie-search')
+  search?.focus({ preventScroll: true })
+  search?.scrollIntoView({ block: 'start' })
+}
 
 async function changeLocale(event: Event) {
   const selectedLocale = (event.currentTarget as HTMLSelectElement)
@@ -46,7 +55,13 @@ async function signOut() {
       <RouterLink class="site-brand" to="/"
         >BUBLIKI<span>CINEMA</span></RouterLink
       >
-      <RouterLink class="catalog-link" to="/#movies">{{ t('nav.movies') }}</RouterLink>
+      <div class="catalog-actions">
+        <RouterLink class="catalog-link" to="/#movies">{{ t('nav.movies') }}</RouterLink>
+        <button type="button" class="search-button" :aria-label="t('nav.searchMovies')"
+          :title="t('nav.searchMovies')" @click="openMovieSearch">
+          <span class="search-icon" aria-hidden="true"></span>
+        </button>
+      </div>
       <div class="account-links">
         <label class="locale-picker">
           <span class="visually-hidden">{{ t('nav.language') }}</span>
@@ -115,6 +130,7 @@ async function signOut() {
 }
 
 .site-navigation a:focus-visible,
+.search-button:focus-visible,
 .account-links button:focus-visible,
 .locale-picker select:focus-visible {
   outline: 2px solid #c4b5fd;
@@ -131,8 +147,50 @@ async function signOut() {
 }
 
 .catalog-link:hover,
+.search-button:hover,
 .sign-in:hover {
   background: #2c2337;
+}
+
+.catalog-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.search-button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.search-icon {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  margin: -3px 3px 0 0;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+
+.search-icon::after {
+  content: '';
+  position: absolute;
+  top: 9px;
+  left: 9px;
+  width: 7px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: rotate(45deg);
+  transform-origin: left center;
 }
 
 .account-links {
@@ -187,7 +245,7 @@ async function signOut() {
     letter-spacing: 3px;
   }
 
-  .catalog-link {
+  .catalog-actions {
     justify-self: end;
   }
 
